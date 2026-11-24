@@ -768,3 +768,8 @@ kbd { font-family: var(--mesa-type-sans); font-size: 10px; padding: 1px 5px; bor
 .publish-foot { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--mesa-border-subtle); background: var(--mesa-bg-surface); }
 a.chip-btn { text-decoration: none; }
 .peek.card-peek { pointer-events: none; }
+
+/* ---------- turn actions (retry / edit) ---------- */
+.turn-actions { display: flex; align-items: center; gap: 6px; margin-top: 6px; opacity: 0; transition: opacity var(--mesa-m-base); }
+.turn:hover .turn-actions, .turn-actions:focus-within { opacity: 1; }
+.turn-meta { font-size: 10.5px; color: var(--mesa-text-muted); margin-left: 4px; font-variant-numeric: tabular-nums; }

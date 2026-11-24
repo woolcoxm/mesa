@@ -2,10 +2,10 @@ import { sc } from '../state/platform';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText, Pencil, Terminal as TerminalIcon, Eye, Globe, Search, Brain, Cpu, Play, Check, X, Loader2, Clock,
-  ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2,
+  ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2, RotateCcw,
 } from 'lucide-react';
 import { Markdown } from './Markdown';
-import { isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
+import { insertIntoComposer, isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
 import type { Block, DiffInfo, Session, ToolCall, Turn } from '../state/types';
 import { useStore } from '../state/useStore';
 
@@ -101,6 +101,13 @@ function TurnCard({ turn, session, first }: { turn: Turn; session: Session; firs
           {(open || live || toolCount <= 2) && turn.blocks.map((b) => <BlockView key={b.id} b={b} session={session} />)}
           {live && <Working turn={turn} session={session} />}
           {turn.status === 'cancelled' && <div className="turn-note">Turn cancelled.</div>}
+          {turn.status === 'done' && (
+            <div className="turn-actions">
+              <button className="chip-btn" title="Run the same prompt again as a new turn" disabled={session.state !== 'idle'} onClick={() => send(turn.user)}><RotateCcw size={11} />Retry</button>
+              <button className="chip-btn" title="Put this message back in the composer" onClick={() => insertIntoComposer(turn.user)}><Pencil size={11} />Edit</button>
+              <span className="turn-meta">{turn.deliverables.length ? `${turn.deliverables.length} deliverable${turn.deliverables.length === 1 ? '' : 's'} · ` : ''}{(secs).toFixed(0)}s</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

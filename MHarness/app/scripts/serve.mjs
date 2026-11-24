@@ -32,6 +32,8 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/__mesa/run') return runShell(req, res);
   if (url.pathname === '/__mesa/publish' && req.method === 'POST') return publish(req, res);
   if (url.pathname === '/__mesa/published') return listPublished(res);
+  if (url.pathname === '/__mesa/state' && req.method === 'GET') return getStateFile(res);
+  if (url.pathname === '/__mesa/state' && req.method === 'PUT') return putStateFile(req, res);
   if (url.pathname.startsWith('/__mesa/publish/') && req.method === 'DELETE') return unpublish(url, res);
   if (url.pathname === '/__mesa/config') {
     // Local-only bootstrap config (mesa.config.json next to package.json). Served only to this origin.
@@ -153,6 +155,21 @@ async function unpublish(url, res) {
   if (!/^[\w-]+$/.test(id)) { res.writeHead(400); return res.end('bad id'); }
   await rm(join(publishedDir, `${id}.html`), { force: true });
   res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true }));
+}
+
+// ---------- workspace state file (cross-browser persistence; git-ignored) ----------
+const stateFile = join(appRoot, 'mesa.state.json');
+async function getStateFile(res) {
+  try { const body = await readFile(stateFile, 'utf8'); res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(body); }
+  catch { res.writeHead(404, { 'content-type': 'application/json' }); res.end('{"error":"no state"}'); }
+}
+async function putStateFile(req, res) {
+  const chunks = []; for await (const c of req) chunks.push(c);
+  const text = Buffer.concat(chunks).toString('utf8');
+  if (text.length > 25_000_000) { res.writeHead(413); return res.end('too large'); }
+  try { JSON.parse(text); } catch { res.writeHead(400); return res.end('bad json'); }
+  await writeFile(stateFile, text);
+  res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, bytes: text.length }));
 }
 
 async function proxy(req, res, url) {

@@ -13,7 +13,7 @@ Mesa is a single window where a person and an LLM agent co-work. The conversatio
 | Stack | React 19 · TypeScript · Vite · xterm.js — zero UI framework, design tokens in CSS variables |
 | Models | Any OpenAI-compatible endpoint: **Z.AI Coding Plan**, **Strata**, OpenAI, custom, or the built-in **offline mock** |
 | Modes | Scripted demo agent (no network) · live streaming with tool calling |
-| Persistence | Event-sourced session ledger, saved locally; survives reloads |
+| Persistence | Event-sourced session ledger saved to the browser **and** mirrored to a workspace state file by the Mesa server — sessions survive reloads, new tabs and other browsers |
 | License | MIT |
 
 ---
@@ -31,7 +31,7 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | | |
 |---|---|
 | ![Shell](docs/screenshots/01-shell-dark.png) | ![Approval takeover](docs/screenshots/02-approval.png) |
-| **Three-pane shell** — session tree with state dots, streaming thread with tool rows, right dock with 8 tabs, command palette (`Ctrl+K`), light/dark/system themes. | **Approval takeover** — the composer becomes a decision: the exact command with flagged tokens, auto-review rationale, *allow once / always for this repo / deny with reason*. `Esc` denies, `Alt+A` allows. |
+| **Three-pane shell** — session tree with state dots, streaming thread with tool rows and per-turn **Retry / Edit**, right dock with 8 tabs, command palette (`Ctrl+K`), light/dark/system themes. | **Approval takeover** — the composer becomes a decision: the exact command with flagged tokens, auto-review rationale, *allow once / always for this repo / deny with reason*. `Esc` denies, `Alt+A` allows. |
 | ![Live preview](docs/screenshots/04-preview.png) | ![Run console](docs/screenshots/05-run-console.png) |
 | **Live preview** — sandboxed iframe (no `allow-same-origin`), device sizes, console/network capture, screenshot-to-chat, element-to-agent. HTML code blocks in chat have a **Run** button. | **Run console** — real xterm PTY tabs per session, background jobs with kill/restart/notify, a simulated shell you can type into (`ls`, `git status`, `pnpm test`…). |
 | ![Files & diffs](docs/screenshots/06-files-diffs.png) | ![Agents board](docs/screenshots/07-agents-board.png) |

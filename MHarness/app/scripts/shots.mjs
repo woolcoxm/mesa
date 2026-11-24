@@ -29,7 +29,9 @@ const back = async () => { await page.locator('.session-row.active').click(); aw
 const esc = async () => { await page.keyboard.press('Escape'); await page.waitForTimeout(200); };
 
 await page.goto(url + '/');
+// Reset both stores (browser copy and the workspace state file) so the replay starts from the seeded demo.
 await page.evaluate(() => localStorage.clear());
+await page.evaluate(async () => { await fetch('/__mesa/state', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sessions: [], settings: {} }) }); });
 await page.reload(); await page.waitForTimeout(1500);
 
 // 18 — guided tour (first run), stopped on the composer step

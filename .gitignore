@@ -6,6 +6,8 @@ dist/
 
 # local-only configuration (contains API keys)
 MHarness/app/mesa.config.json
+MHarness/app/mesa.state.json
+MHarness/app/dist/published/
 .env
 .env.*
 

@@ -77,18 +77,23 @@ const listeners = new Set<() => void>();
 let version = 0;
 const LS_KEY = 'mesa.state.v2';
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let serverTimer: ReturnType<typeof setTimeout> | null = null;
 function persistSoon() {
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
+    let text = '';
     try {
       const sessions = state.sessions.map((s) => ({ ...s, cancel: undefined, pendingApproval: undefined, queued: [] as QueuedMsg[] }));
-      localStorage.setItem(LS_KEY, JSON.stringify({ sessions, settings: state.settings, activeSessionId: state.activeSessionId, savedAt: Date.now() }));
+      text = JSON.stringify({ sessions, settings: state.settings, activeSessionId: state.activeSessionId, savedAt: Date.now() });
+      localStorage.setItem(LS_KEY, text);
     } catch { /* quota or unavailable */ }
+    // Mirror to the workspace state file when the Mesa server is present (cross-browser persistence). Non-blocking, throttled.
+    if (text && serverTimer) clearTimeout(serverTimer);
+    if (text) serverTimer = setTimeout(() => { fetch('/__mesa/state', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: text }).catch(() => { /* no server */ }); }, 1500);
   }, 400);
 }
-function loadPersisted(): { sessions: Session[]; settings: AppState['settings']; activeSessionId: Id } | null {
+function parsePersisted(raw: string): { sessions: Session[]; settings: AppState['settings']; activeSessionId: Id } | null {
   try {
-    const raw = localStorage.getItem(LS_KEY); if (!raw) return null;
     const p = JSON.parse(raw);
     if (!Array.isArray(p.sessions) || !p.sessions.length) return null;
     const sessions: Session[] = p.sessions.map((s: Session) => ({
@@ -96,8 +101,14 @@ function loadPersisted(): { sessions: Session[]; settings: AppState['settings'];
       state: s.state === 'running' || s.state === 'awaiting' ? 'idle' : s.state,
       turns: (s.turns ?? []).map((t) => (t.status === 'running' || t.status === 'awaiting' ? { ...t, status: 'cancelled' as const, endedAt: t.endedAt ?? Date.now(), blocks: t.blocks.map((b) => (b.type === 'text' ? { ...b, streaming: false } : b.type === 'tool' && (b.call.status === 'running' || b.call.status === 'awaiting-approval') ? { ...b, call: { ...b.call, status: 'error' as const, error: 'Interrupted by reload' } } : b)) } : t)),
     }));
-    return { sessions, settings: { ...initial.settings, ...(p.settings ?? {}) , shortcuts: { ...(p.settings?.shortcuts ?? {}) } }, activeSessionId: p.activeSessionId ?? sessions[0].id };
+    return { sessions, settings: { ...initial.settings, ...(p.settings ?? {}), shortcuts: { ...(p.settings?.shortcuts ?? {}) } }, activeSessionId: p.activeSessionId ?? sessions[0].id };
   } catch { return null; }
+}
+function loadPersisted(): { sessions: Session[]; settings: AppState['settings']; activeSessionId: Id } | null {
+  try { const raw = localStorage.getItem(LS_KEY); return raw ? parsePersisted(raw) : null; } catch { return null; }
+}
+async function loadServerState(): Promise<{ sessions: Session[]; settings: AppState['settings']; activeSessionId: Id } | null> {
+  try { const r = await fetch('/__mesa/state', { cache: 'no-store' }); if (!r.ok) return null; return parsePersisted(await r.text()); } catch { return null; }
 }
 function emit() {
   version++;
@@ -720,7 +731,8 @@ export function cancelTurn(sessionId: Id) {
 
 // ---------- seeding ----------
 export async function seed() {
-  const saved = loadPersisted();
+  // Browser copy first; if this is a fresh browser, fall back to the workspace state file served by Mesa.
+  const saved = loadPersisted() ?? await loadServerState();
   if (saved) {
     state = { ...initial, sessions: saved.sessions, settings: saved.settings, activeSessionId: saved.activeSessionId, dock: { open: true, tab: 'artifacts', floating: false } };
   }
