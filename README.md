@@ -106,6 +106,8 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 ## Keyboard
 
+Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
+
 | | | | |
 |---|---|---|---|
 | `Ctrl+K` | Command palette | `Ctrl+N` | New session |

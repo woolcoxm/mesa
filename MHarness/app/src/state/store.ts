@@ -61,7 +61,7 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {} },
   canvasSplit: null,
   canvasArtifact: null,
   insert: null,
@@ -95,7 +95,7 @@ function loadPersisted(): { sessions: Session[]; settings: AppState['settings'];
       state: s.state === 'running' || s.state === 'awaiting' ? 'idle' : s.state,
       turns: (s.turns ?? []).map((t) => (t.status === 'running' || t.status === 'awaiting' ? { ...t, status: 'cancelled' as const, endedAt: t.endedAt ?? Date.now(), blocks: t.blocks.map((b) => (b.type === 'text' ? { ...b, streaming: false } : b.type === 'tool' && (b.call.status === 'running' || b.call.status === 'awaiting-approval') ? { ...b, call: { ...b.call, status: 'error' as const, error: 'Interrupted by reload' } } : b)) } : t)),
     }));
-    return { sessions, settings: { ...initial.settings, ...(p.settings ?? {}) }, activeSessionId: p.activeSessionId ?? sessions[0].id };
+    return { sessions, settings: { ...initial.settings, ...(p.settings ?? {}) , shortcuts: { ...(p.settings?.shortcuts ?? {}) } }, activeSessionId: p.activeSessionId ?? sessions[0].id };
   } catch { return null; }
 }
 function emit() {

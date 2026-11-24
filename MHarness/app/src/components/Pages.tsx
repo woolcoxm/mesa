@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Check, Info, AlertTriangle, OctagonAlert, Sun, Moon, Monitor, Sparkles, Puzzle, CalendarClock, Power, Keyboard, SlidersHorizontal } from 'lucide-react';
 import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings } from '../state/store';
 import { startTour } from './Tour';
+import { ShortcutEditor } from './ShortcutEditor';
 import { listModels, PROVIDER_PRESETS, shellStatus, testProvider } from '../agent/provider';
 import { ACCENTS, sc, shellName } from '../state/platform';
 import { useStore } from '../state/useStore';
@@ -16,10 +17,6 @@ export function Toasts() {
     </div>
   );
 }
-
-const SHORTCUTS: [string, string][] = [
-  ['Ctrl+K', 'Command palette'], ['Ctrl+N', 'New session'], ['Ctrl+Enter', 'Send / run'], ['Shift+Enter', 'Inject at next tool call'], ['Alt+Enter', 'Queue message'], ['Ctrl+.', 'Cycle mode'], ['Ctrl+Shift+P', 'Cycle permission preset'], ['Ctrl+1…8', 'Right dock tabs'], ['Ctrl+Shift+F', 'Float / unfloat dock tab'], ['Ctrl+Shift+G', 'Gallery'], ['Ctrl+Shift+J', 'Run console'], ['Ctrl+\\', 'Toggle left rail'], ['Ctrl+Shift+\\', 'Toggle right dock'], ['Alt+A', 'Allow approval'], ['Alt+R', 'Deny with reason'], ['Ctrl+Shift+D', 'Do not disturb'], ['Ctrl+Alt+T', 'New terminal'], ['F2', 'Rename session'],
-];
 
 export function SettingsPage() {
   const st = useStore();
@@ -38,8 +35,7 @@ export function SettingsPage() {
         <Row label="Notifications" sub="Browser notifications for approvals and finished work while the window is in the background"><Toggle on={s.notifications} onChange={async (v) => { if (v) { const p = await requestNotifyPermission(); if (p !== 'granted') { toast(`Browser ${p === 'unsupported' ? 'does not support' : 'blocked'} notifications`, 'warning'); return; } } updateSettings({ notifications: v }); }} /></Row>
       </section>
       <section className="set-section"><h4>Keyboard</h4>
-        <div className="shortcuts">{SHORTCUTS.map(([k, d]) => <div key={k} className="sc-row"><span>{d}</span><span className="spacer" /><kbd>{sc(k)}</kbd></div>)}</div>
-        <div className="set-sub" style={{ marginTop: 8 }}>Shortcuts are editable in the full keyboard editor (v1).</div>
+        <ShortcutEditor />
       </section>
       <section className="set-section"><h4>Agent</h4>
         <Row label="Agent backend" sub="Demo runs scripted scenarios offline; Live streams from an OpenAI-compatible endpoint. HTML fences in answers become previewable artifacts.">

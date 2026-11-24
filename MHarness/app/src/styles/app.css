@@ -738,3 +738,13 @@ kbd { font-family: var(--mesa-type-sans); font-size: 10px; padding: 1px 5px; bor
 .center.has-canvas .hdr { grid-template-columns: auto 1fr auto; }
 .center.has-canvas .thread-inner { padding: 16px 16px 16px; }
 .center.has-canvas .user-text { max-width: 90%; }
+/* ---------- shortcut editor ---------- */
+.sc-editor-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sc-group { margin-top: 8px; }
+.sc-group-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mesa-text-muted); padding: 4px 0 2px; }
+.sc-row.recording { background: var(--mesa-accent-soft); border-radius: 6px; }
+.sc-conflict { color: var(--mesa-danger); font-size: 11px; }
+.sc-chord { display: inline-flex; gap: 3px; align-items: center; padding: 2px 6px; border-radius: 6px; border: 1px dashed transparent; background: transparent; }
+.sc-chord:hover { border-color: var(--mesa-border-strong); }
+.sc-chord.recording { border-color: var(--mesa-accent); color: var(--mesa-accent); font-size: 11px; animation: blink 1s steps(2) infinite; }
+.sc-row.custom .sc-chord kbd { border-color: var(--mesa-accent); color: var(--mesa-accent); }

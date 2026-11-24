@@ -167,6 +167,7 @@ export interface Settings {
   shell: boolean;
   accent: string;
   tourDone: boolean;
+  shortcuts: Record<string, string>;
   provider?: { baseUrl: string; apiKey: string; model: string; preset: string; proxy: boolean; tools?: boolean };
 }
 
