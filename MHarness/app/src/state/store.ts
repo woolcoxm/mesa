@@ -3,7 +3,7 @@ import type {
   Run, Session, Toast, TLEvent, ToolCall, Turn, Usage,
 } from './types';
 import { pickScenario, SEED_PLAN, type ArtifactSeed, type SceneStep, type Scenario } from '../agent/scenarios';
-import { extractHtmlArtifacts, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
+import { extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
 
 export const uid = (): Id => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -61,7 +61,7 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo' },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false },
   canvasSplit: null,
   insert: null,
   confetti: null,
@@ -216,6 +216,7 @@ export function setCheckpoint(sessionId: Id, label: string, auto = false) {
 
 export function insertIntoComposer(text: string) { state = { ...state, insert: { text, n: Date.now() } }; emit(); }
 export function clearInsert() { if (state.insert) { state = { ...state, insert: null }; } }
+export function isLiveAgent() { const p = state.settings.provider; return state.settings.agent === 'live' && !!p?.baseUrl && (!!p.apiKey || p.preset === 'mock'); }
 export function focusCall(callId: Id) { state = { ...state, focus: { callId, n: Date.now() } }; emit(); }
 export function openAdhocPreview(title: string, html: string) { state = { ...state, adhoc: { title, html }, dock: { ...state.dock, tab: 'preview', open: true } }; emit(); }
 export function clearAdhocPreview() { state = { ...state, adhoc: null }; emit(); }
@@ -543,7 +544,7 @@ function startTurn(sessionId: Id, text: string) {
   const title = text.length > 42 ? text.slice(0, 42).trimEnd() + '…' : text;
   if (state.sessions.find((x) => x.id === sessionId)?.title === 'New session') updateSession(sessionId, (s) => { s.title = title; });
   pushTimeline(sessionId, { label: `turn · ${title}`, kind: 'turn' });
-  if (state.settings.agent === 'live' && state.settings.provider?.apiKey) runModelTurn(sessionId, turnId);
+  if (isLiveAgent()) runModelTurn(sessionId, turnId);
   else runScenario(sessionId, turnId, pickScenario(text));
   return turnId;
 }
@@ -625,17 +626,26 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
         if (preset !== 'full-access') {
           const cmd = String(args.command ?? '');
           const flags = ['rm -rf', 'sudo', '| sh', '| bash', 'curl ', 'git push', 'drop'].filter((f) => cmd.includes(f));
-          const d = await requestApproval(sessionId, turnId, tb, tcId, { kind: 'shell', title: 'Run shell command', detail: cmd, flags, risk: { level: flags.length ? 'high' : 'medium', rationale: flags.length ? `Matches dangerous pattern(s): ${flags.join(', ')}` : 'Requested by the live model; runs in the demo sandbox.' } }, false);
+          const d = await requestApproval(sessionId, turnId, tb, tcId, { kind: 'shell', title: 'Run shell command', detail: cmd, flags, risk: { level: flags.length ? 'high' : 'medium', rationale: flags.length ? `Matches dangerous pattern(s): ${flags.join(', ')}` : state.settings.shell ? 'Requested by the live model — runs for real on this machine (inside the repository folder).' : 'Requested by the live model; runs in the demo sandbox.' } }, false);
           if (d.action === 'deny') { allowed = false; output = `Denied by user${d.reason ? `: ${d.reason}` : ''}`; }
         }
         if (allowed) {
           const cmd = String(args.command ?? '');
-          const run: Run = { id: uid(), sessionId, owner: 'agent', runtime: 'sandbox', command: cmd, cwd: String(args.cwd ?? 'mesa-demo'), preset, status: 'running', startedAt: Date.now(), lines: [`$ ${cmd}`], background: false };
+          const real = state.settings.shell;
+          const cwd = String(args.cwd ?? (real ? '.' : 'mesa-demo'));
+          const run: Run = { id: uid(), sessionId, owner: 'agent', runtime: real ? 'host' : 'sandbox', command: cmd, cwd, preset, status: 'running', startedAt: Date.now(), lines: [`$ ${cmd}`], background: false };
           updateSession(sessionId, (s) => { s.runs = [...s.runs, run]; });
-          updateCall(sessionId, turnId, tb, (c) => { c.runId = run.id; });
-          const lines = fakeShell(cmd.split(/\s+/).join(' '));
-          for (const line of lines) { await sleep(120); updateSession(sessionId, (s) => { s.runs = s.runs.map((r) => (r.id === run.id ? { ...r, lines: [...r.lines, line] } : r)); }); output = (output ? output + '\n' : '') + line; }
-          updateSession(sessionId, (s) => { s.runs = s.runs.map((r) => (r.id === run.id ? { ...r, status: 'exited', exitCode: 0, endedAt: Date.now() } : r)); });
+          updateCall(sessionId, turnId, tb, (c) => { c.runId = run.id; c.runtime = real ? 'host' : 'sandbox'; });
+          const push = (line: string) => { updateSession(sessionId, (s) => { s.runs = s.runs.map((r) => (r.id === run.id ? { ...r, lines: [...r.lines, line] } : r)); }); output = (output ? output + '\n' : '') + line; };
+          let exit = 0;
+          if (real) {
+            try { const r = await runShellStream({ command: cmd, cwd, timeoutMs: 120_000, onLine: (stream, line) => push(stream === 'stderr' ? `[stderr] ${line}` : line) }); exit = r.exitCode; }
+            catch (e) { push(`mesa: ${e instanceof Error ? e.message : String(e)}`); exit = -1; }
+          } else {
+            for (const line of fakeShell(cmd.split(/\s+/).join(' '))) { await sleep(120); push(line); }
+          }
+          updateSession(sessionId, (s) => { s.runs = s.runs.map((r) => (r.id === run.id ? { ...r, status: exit === 0 ? 'exited' : 'failed', exitCode: exit, endedAt: Date.now() } : r)); });
+          if (exit !== 0) ok = false;
           if (state.dock.tab === 'run') selectRun(sessionId, run.id);
         } else ok = false;
       } else if (name === 'present_html') {
@@ -702,18 +712,17 @@ export async function seed() {
   if (saved) {
     state = { ...initial, sessions: saved.sessions, settings: saved.settings, activeSessionId: saved.activeSessionId, dock: { open: true, tab: 'artifacts', floating: false } };
   }
-  // First run (or no provider saved yet): pick up mesa.config.json served by the dev server.
-  if (!state.settings.provider?.baseUrl) {
-    try {
-      const r = await fetch('/__mesa/config', { cache: 'no-store' });
-      if (r.ok) {
-        const cfg = await r.json();
-        if (cfg?.provider?.baseUrl) {
-          state = { ...state, settings: { ...state.settings, provider: { preset: 'custom', proxy: true, apiKey: '', model: '', ...cfg.provider }, agent: cfg.agent === 'live' ? 'live' : state.settings.agent } };
-        }
+  // Bootstrap from mesa.config.json (served by serve.mjs): provider on first run, shell flag whenever enabled.
+  try {
+    const r = await fetch('/__mesa/config', { cache: 'no-store' });
+    if (r.ok) {
+      const cfg = await r.json();
+      if (cfg?.provider?.baseUrl && !state.settings.provider?.baseUrl) {
+        state = { ...state, settings: { ...state.settings, provider: { preset: 'custom', proxy: true, apiKey: '', model: '', ...cfg.provider }, agent: cfg.agent === 'live' ? 'live' : state.settings.agent } };
       }
-    } catch { /* not served by serve.mjs — fine */ }
-  }
+      if (cfg?.shell === true) state = { ...state, settings: { ...state.settings, shell: true } };
+    }
+  } catch { /* not served by serve.mjs — fine */ }
   if (saved) { emit(); return; }
   const now = Date.now();
   const mk = (id: string, title: string, group: Session['group'], ago: number, scenarioId?: string) => newSession({ id, title, group, createdAt: now - ago, updatedAt: now - ago });

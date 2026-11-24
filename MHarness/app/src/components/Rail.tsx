@@ -1,3 +1,4 @@
+import { sc } from '../state/platform';
 import { useMemo, useRef, useState } from 'react';
 import {
   Plus, Search, Bot, CalendarClock, Puzzle, Settings, ChevronDown, ChevronRight, PanelLeftClose, Layers, Sparkles, X,
@@ -46,7 +47,7 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
       <div className="rail-search">
         <Search size={14} />
         <input placeholder="Search sessions" value={st.rail.search} onChange={(e) => setRailSearch(e.target.value)} aria-label="Search sessions" />
-        <kbd>⌘K</kbd>
+        <kbd>{sc('Ctrl+K')}</kbd>
       </div>
       <div className="rail-sessions" role="tree" aria-label="Sessions">
         {GROUPS.filter((g) => grouped[g]).map((g) => (
@@ -73,7 +74,7 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
         <button className={'nav-row' + (st.page === 'automations' ? ' on' : '')} onClick={() => openPage('automations')}><CalendarClock size={16} /><span>Automations</span></button>
         <button className={'nav-row'} onClick={() => toggleGallery(true)}><Layers size={16} /><span>Gallery</span><span className="count">{st.sessions.reduce((n, s) => n + s.artifacts.filter((a) => a.pinned).length, 0) || ''}</span></button>
         <button className={'nav-row' + (st.page === 'plugins' ? ' on' : '')} onClick={() => openPage('plugins')}><Puzzle size={16} /><span>Plugins & Skills</span></button>
-        <button className={'nav-row'} onClick={() => togglePalette(true)}><Sparkles size={16} /><span>Commands</span><kbd>⌘K</kbd></button>
+        <button className={'nav-row'} onClick={() => togglePalette(true)}><Sparkles size={16} /><span>Commands</span><kbd>{sc('Ctrl+K')}</kbd></button>
       </div>
       <div className="rail-bottom">
         <button className={'nav-row' + (st.page === 'settings' ? ' on' : '')} onClick={() => openPage('settings')}><Settings size={16} /><span>Settings</span></button>

@@ -1,3 +1,4 @@
+import { sc } from '../state/platform';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, ArrowUpToLine, CornerDownLeft, Paperclip, AtSign, Slash, X, ShieldAlert, ShieldCheck, CircleStop, ListChecks, Check, ChevronDown, Sparkles, AlertTriangle, Clock } from 'lucide-react';
 import { cancelTurn, clearInsert, decide, dequeue, flushQueue, send, setDockTab, toast, togglePalette } from '../state/store';
@@ -83,7 +84,7 @@ export function Composer({ session }: { session: Session }) {
             <button className="icon-btn" title="Reference a file with @" onClick={() => { setText(text + '@'); ta.current?.focus(); }}><AtSign size={15} /></button>
             <button className="icon-btn" title="Slash command" onClick={() => { setText('/'); ta.current?.focus(); }}><Slash size={15} /></button>
             <button className="icon-btn" title="Commands (Ctrl+K)" onClick={() => togglePalette(true)}><Sparkles size={15} /></button>
-            <span className="composer-hint"><kbd>Enter</kbd> send · <kbd>Shift</kbd><kbd>Enter</kbd> {live ? 'inject' : 'newline'}{live && <> · <kbd>Alt</kbd><kbd>Enter</kbd> queue</>}</span>
+            <span className="composer-hint"><kbd>Enter</kbd> send · <kbd>{sc('Shift')}</kbd><kbd>Enter</kbd> {live ? 'inject' : 'newline'}{live && <> · <kbd>{sc('Alt')}</kbd><kbd>Enter</kbd> queue</>}</span>
           </div>
           <textarea ref={ta} className="composer-input" rows={1} placeholder={live ? 'Steer the agent — queue a message or inject at the next tool call…' : 'Ask Mesa to build, analyse, fix or refactor…'} value={text} onChange={(e) => onChange(e.target.value)} onKeyDown={onKey} aria-label="Message" />
           <div className="composer-bottom">
@@ -123,9 +124,9 @@ export function ApprovalTakeover({ session, approval, draft }: { session: Sessio
   const risk = approval.risk;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); decide(session.id, { action: 'allow-once' }); }
-      if (e.altKey && (e.key === 'r' || e.key === 'R')) { e.preventDefault(); setDeny(true); }
-      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (deny) decide(session.id, { action: 'deny', reason: reason.trim() || 'dismissed by user' }); else setDeny(true); }
+      if (e.altKey && e.code === 'KeyA') { e.preventDefault(); decide(session.id, { action: 'allow-once' }); }
+      if (e.altKey && e.code === 'KeyR') { e.preventDefault(); setDeny(true); }
+      if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (deny) decide(session.id, { action: 'deny', reason: reason.trim() || 'dismissed by user' }); else setDeny(true); }
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
@@ -147,7 +148,7 @@ export function ApprovalTakeover({ session, approval, draft }: { session: Sessio
           <button className="btn primary" onClick={allow} autoFocus title="Allow (Alt+A)"><ShieldCheck size={14} />{remember ? 'Always allow' : 'Allow once'}</button>
         </div>
       )}
-      <div className="tk-hint"><AlertTriangle size={11} /> Agent is paused until you decide. <kbd>Alt</kbd><kbd>A</kbd> allow · <kbd>Alt</kbd><kbd>R</kbd> deny <span className="spacer" /><button className="link-btn" onClick={() => cancelTurn(session.id)}>Cancel turn</button></div>
+      <div className="tk-hint"><AlertTriangle size={11} /> Agent is paused until you decide. <kbd>{sc('Alt')}</kbd><kbd>A</kbd> allow · <kbd>{sc('Alt')}</kbd><kbd>R</kbd> deny <span className="spacer" /><button className="link-btn" onClick={() => cancelTurn(session.id)}>Cancel turn</button></div>
     </div>
   );
 }

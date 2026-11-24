@@ -45,30 +45,37 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 
 ## Quick start
 
-```powershell
+Runs on **Windows, macOS and Linux** (Node ≥ 18; nothing else to install — the dev server, model proxy and offline mock have zero dependencies).
+
+```bash
 git clone https://github.com/woolcoxm/mesa.git
 cd mesa/MHarness/app
-pnpm install          # node-linker: hoisted is configured in pnpm-workspace.yaml
+pnpm install          # macOS/Linux: `pnpm install` too; or `npm install` / `corepack enable`
 pnpm build            # vite build → dist/
-pnpm preview          # zero-dependency static server → http://127.0.0.1:5173
+pnpm serve            # → http://127.0.0.1:5173  (same as `node scripts/serve.mjs`)
 ```
 
 Open **http://127.0.0.1:5173**. It boots with five scripted demo sessions — click **Build a small flashy dashboard app** in the empty state to see the full loop: plan → edits with diffs → an install approval → dev-server job → preview → three deliverables and the showcase.
 
-> `pnpm dev` (Vite dev server + HMR) works too, but use `pnpm preview` / `node scripts/serve.mjs` for the full experience: that server also hosts the model proxy and the offline mock model.
+> `pnpm dev` (Vite dev server + HMR) works too, but `pnpm serve` is the full experience: it also hosts the model proxy, the bootstrap config and the offline mock model. Keyboard shortcuts use **⌘/⌥** on macOS and **Ctrl/Alt** elsewhere, and are matched by physical key so they work on every keyboard layout.
 
 ### First-run configuration
 
-Mesa looks for `MHarness/app/mesa.config.json` (git-ignored) and applies it on first launch:
+Mesa looks for `MHarness/app/mesa.config.json` (git-ignored) and applies it on launch:
 
 ```json
 {
   "provider": { "preset": "strata", "baseUrl": "http://10.0.0.169:8080/v1", "apiKey": "…", "model": "…", "proxy": true },
-  "agent": "live"
+  "agent": "live",
+  "shell": true
 }
 ```
 
 Without it, the app starts in **Demo** mode, which needs no network or keys.
+
+### Real shell (optional)
+
+With `"shell": true` (or `MESA_SHELL=1`), a live agent's `bash` tool runs **for real on the machine hosting `serve.mjs`** — `cmd.exe` on Windows (with a small `ls`/`cat`/`pwd` alias table so POSIX-style commands behave), otherwise your `$SHELL` with `-c`. Commands are confined to the repository folder, killed after a timeout, and **always gated by the approval takeover** in the UI. With the shell off, live `bash` calls run in a simulated sandbox instead.
 
 ---
 
@@ -83,7 +90,7 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 | OpenAI / Custom | any | Any OpenAI-compatible endpoint. |
 | **Mesa mock (offline)** | served by `scripts/serve.mjs` | Scripted model that exercises the full tool loop (bash → approval → present_html) with no key or network. `echo:` prompts stream back verbatim — handy for testing markdown rendering. |
 
-**Tool calling** (`present_html`, `bash`, `read_file`) runs up to 4 rounds per turn; `bash` goes through the approval takeover unless the preset is Full access. A 120 s first-byte watchdog turns a silent hang into a clear error.
+**Tool calling** (`present_html`, `bash`, `read_file`) runs up to 4 rounds per turn; `bash` goes through the approval takeover unless the preset is Full access, then runs for real (if the real shell is enabled) or in the simulated sandbox. A 120 s first-byte watchdog turns a silent hang into a clear error.
 
 **Mesa proxy** — requests to other origins are routed through `/proxy?u=…` in `scripts/serve.mjs`, which forwards only `content-type`/`authorization` to an allow-list (`api.z.ai`, `api.openai.com`, `10.0.0.169`; extend with `PROXY_ALLOW=host1,host2`). This avoids browser CORS on endpoints that don't send CORS headers. Keys stay in your browser's `localStorage`.
 
@@ -129,7 +136,9 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Testing
 
-The UI was verified with a scripted Playwright pass (~140 checks across every screen and control), capturing `pageerror` as the crash signal and reviewing screenshots of each state. Coverage includes: boot and persistence (including corrupted and old-schema storage), rail actions (search, collapse, rename, delete, delete-all), header menus and cycling, composer (`@`, `/`, attach, queue/inject/stop/flush), approval decisions (Esc, Alt+R with reason, always-allow, cancel-from-takeover), showcase behaviours (pin-all, minimise/restore, DND, deleting the showcased session), run console (typing, `clear`, Ctrl+C, kill/restart/notify, shortcuts from terminal focus), preview (device sizes, console/network, screenshot-to-chat, ad-hoc run), files/diffs, agents, stats, timeline, browser tab, gallery (filter, search, compare, re-run), palette, exports, provider edge cases (unreachable/malformed URLs, stale responses), markdown/XSS injection, extreme viewports, and drag-resize of both sidebars.
+**CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests, on **Ubuntu, macOS and Windows**: install → typecheck → build → `scripts/smoke.mjs`, which boots the server with the real shell enabled and verifies the app, the shell status, a quoted command, exit-code propagation, the workspace boundary and the offline mock.
+
+The UI was verified with a scripted Playwright pass (~140 checks across every screen and control), capturing `pageerror` as the crash signal and reviewing screenshots of each state. Coverage includes: boot and persistence (including corrupted and old-schema storage), rail actions (search, collapse, rename, delete, delete-all), header menus and cycling, composer (`@`, `/`, attach, queue/inject/stop/flush), approval decisions (Esc, Alt+R with reason, always-allow, cancel-from-takeover), showcase behaviours (pin-all, minimise/restore, DND, deleting the showcased session), run console (typing, `clear`, Ctrl+C, kill/restart/notify, shortcuts from terminal focus), preview (device sizes, console/network, screenshot-to-chat, ad-hoc run), files/diffs, agents, stats, timeline, browser tab, gallery (filter, search, compare, re-run), palette, exports, provider edge cases (unreachable/malformed URLs, stale responses), markdown/XSS injection, the real shell (approval → real `ls` output → exit code in the console), extreme viewports, and drag-resize of both sidebars.
 
 ---
 

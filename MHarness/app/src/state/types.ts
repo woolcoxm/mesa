@@ -164,6 +164,7 @@ export interface Settings {
   sidebarWidth: number;
   dockWidth: number;
   agent: 'demo' | 'live';
+  shell: boolean;
   provider?: { baseUrl: string; apiKey: string; model: string; preset: string; proxy: boolean; tools?: boolean };
 }
 

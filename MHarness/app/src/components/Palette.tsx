@@ -1,3 +1,4 @@
+import { sc } from '../state/platform';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, Moon, Sun, PanelRight, Layers, BellOff, PanelLeft, Sparkles, AppWindow, ChartColumn, TestTube2, GitBranch, Keyboard, Settings, Puzzle, CalendarClock, Cpu, Zap, Command } from 'lucide-react';
 import { exportSession, newSessionAction, openPage, send, setDockTab, setMode, toggleDock, toggleGallery, togglePalette, toggleRail, updateSettings, DOCK_TABS, setActive } from '../state/store';
@@ -18,20 +19,20 @@ export function Palette() {
   const commands = useMemo(() => {
     const dark = st.settings.theme === 'dark' || (st.settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     const base: Cmd[] = [
-      { id: 'new', t: 'New session', k: 'Ctrl+N', icon: Plus, run: () => newSessionAction() },
+      { id: 'new', t: 'New session', k: sc('Ctrl+N'), icon: Plus, run: () => newSessionAction() },
       { id: 'theme', t: dark ? 'Switch to light theme' : 'Switch to dark theme', k: '', icon: dark ? Sun : Moon, run: () => updateSettings({ theme: dark ? 'light' : 'dark' }) },
-      { id: 'dnd', t: st.settings.dnd ? 'Turn off do-not-disturb' : 'Do not disturb (dock showcases silently)', k: 'Ctrl+Shift+D', icon: BellOff, run: () => { updateSettings({ dnd: !st.settings.dnd }); } },
-      { id: 'rail', t: 'Toggle left rail', k: 'Ctrl+\\', icon: PanelLeft, run: toggleRail },
-      { id: 'dock', t: 'Toggle right dock', k: 'Ctrl+Shift+\\', icon: PanelRight, run: toggleDock },
-      { id: 'gallery', t: 'Open Gallery', k: 'Ctrl+Shift+G', icon: Layers, run: () => toggleGallery(true) },
-      ...DOCK_TABS.map((t) => ({ id: 'tab-' + t.id, t: 'Open · ' + t.label, k: 'Ctrl+' + t.key, icon: t.id === 'preview' ? AppWindow : t.id === 'agents' ? GitBranch : t.id === 'stats' ? Cpu : t.id === 'run' ? Zap : Sparkles, run: () => setDockTab(t.id) })),
+      { id: 'dnd', t: st.settings.dnd ? 'Turn off do-not-disturb' : 'Do not disturb (dock showcases silently)', k: sc('Ctrl+Shift+D'), icon: BellOff, run: () => { updateSettings({ dnd: !st.settings.dnd }); } },
+      { id: 'rail', t: 'Toggle left rail', k: sc('Ctrl+\\'), icon: PanelLeft, run: toggleRail },
+      { id: 'dock', t: 'Toggle right dock', k: sc('Ctrl+Shift+\\'), icon: PanelRight, run: toggleDock },
+      { id: 'gallery', t: 'Open Gallery', k: sc('Ctrl+Shift+G'), icon: Layers, run: () => toggleGallery(true) },
+      ...DOCK_TABS.map((t) => ({ id: 'tab-' + t.id, t: 'Open · ' + t.label, k: sc('Ctrl+' + t.key), icon: t.id === 'preview' ? AppWindow : t.id === 'agents' ? GitBranch : t.id === 'stats' ? Cpu : t.id === 'run' ? Zap : Sparkles, run: () => setDockTab(t.id) })),
       { id: 'settings', t: 'Open Settings', k: '', icon: Settings, run: () => openPage('settings') },
       { id: 'plugins', t: 'Open Plugins & Skills', k: '', icon: Puzzle, run: () => openPage('plugins') },
       { id: 'autos', t: 'Open Automations', k: '', icon: CalendarClock, run: () => openPage('automations') },
     ];
     if (session) {
       base.push({ id: 'export', t: 'Export session · JSONL ledger', k: '', icon: Sparkles, run: () => exportSession(session.id, 'jsonl') });
-      base.push({ id: 'plan', t: 'Mode · Plan', k: 'Ctrl+.', icon: Keyboard, run: () => setMode(session.id, 'plan') });
+      base.push({ id: 'plan', t: 'Mode · Plan', k: sc('Ctrl+.'), icon: Keyboard, run: () => setMode(session.id, 'plan') });
       base.push({ id: 'build', t: 'Mode · Build', k: '', icon: Keyboard, run: () => setMode(session.id, 'build') });
       base.push({ id: 'auto', t: 'Mode · Auto', k: '', icon: Keyboard, run: () => setMode(session.id, 'auto') });
       if (session.state !== 'running') {

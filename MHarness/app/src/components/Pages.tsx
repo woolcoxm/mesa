@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Check, Info, AlertTriangle, OctagonAlert, Sun, Moon, Monitor, Sparkles, Puzzle, CalendarClock, Power, Keyboard, SlidersHorizontal } from 'lucide-react';
 import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings } from '../state/store';
-import { listModels, PROVIDER_PRESETS, testProvider } from '../agent/provider';
+import { listModels, PROVIDER_PRESETS, shellStatus, testProvider } from '../agent/provider';
+import { sc, shellName } from '../state/platform';
 import { useStore } from '../state/useStore';
 
 const ICON: Record<string, typeof Info> = { info: Info, success: Check, warning: AlertTriangle, error: OctagonAlert };
@@ -35,7 +36,7 @@ export function SettingsPage() {
         <Row label="Notifications" sub="Browser notifications for approvals and finished work while the window is in the background"><Toggle on={s.notifications} onChange={async (v) => { if (v) { const p = await requestNotifyPermission(); if (p !== 'granted') { toast(`Browser ${p === 'unsupported' ? 'does not support' : 'blocked'} notifications`, 'warning'); return; } } updateSettings({ notifications: v }); }} /></Row>
       </section>
       <section className="set-section"><h4>Keyboard</h4>
-        <div className="shortcuts">{SHORTCUTS.map(([k, d]) => <div key={k} className="sc-row"><span>{d}</span><span className="spacer" /><kbd>{k}</kbd></div>)}</div>
+        <div className="shortcuts">{SHORTCUTS.map(([k, d]) => <div key={k} className="sc-row"><span>{d}</span><span className="spacer" /><kbd>{sc(k)}</kbd></div>)}</div>
         <div className="set-sub" style={{ marginTop: 8 }}>Shortcuts are editable in the full keyboard editor (v1).</div>
       </section>
       <section className="set-section"><h4>Agent</h4>
@@ -49,6 +50,7 @@ export function SettingsPage() {
         <Row label="Reset workspace" sub="Clears saved sessions, artifacts and settings, then reloads the demo"><button className="btn sm ghost" onClick={() => { if (confirm('Reset all sessions and settings?')) resetWorkspace(); }}>Reset…</button></Row>
       </section>
       <section className="set-section"><h4>Permissions</h4>
+        <ShellRow />
         <Row label="Scope memory" sub="“Always allow for this repo” rules"><span className="muted">3 rules · manage</span></Row>
         <Row label="Auto-review tool calls" sub="A second model labels risk before an approval is shown"><Toggle on={true} onChange={() => {}} /></Row>
       </section>
@@ -101,6 +103,21 @@ function ProviderForm() {
         <button className="btn sm ghost" onClick={fetchModels} disabled={!p.baseUrl || listing}>{listing ? 'Fetching…' : 'Fetch models'}</button>
         <button className="btn sm ghost" onClick={test} disabled={!p.baseUrl || !p.model || (!p.apiKey && p.preset !== 'mock') || status === 'testing'}>Test connection</button>
       </div>
+    </div>
+  );
+}
+
+function ShellRow() {
+  const st = useStore();
+  const [server, setServer] = useState<{ enabled: boolean; root?: string } | null>(null);
+  useEffect(() => { shellStatus().then(setServer); }, []);
+  const on = st.settings.shell && !!server?.enabled;
+  return (
+    <div className="set-row">
+      <div><b>Real shell for live agents</b>
+        <div className="set-sub">{server === null ? 'Checking server…' : server.enabled ? `Runs commands with ${shellName()} on this machine via serve.mjs, inside ${server.root ?? 'the repo'}. Every command still goes through the approval takeover.` : 'The server has the real shell disabled — set "shell": true in mesa.config.json (or MESA_SHELL=1) and restart serve.mjs. Live bash calls then use the simulated sandbox.'}</div>
+      </div>
+      <button className={'switch' + (on ? ' on' : '')} role="switch" aria-checked={on} disabled={!server?.enabled} onClick={() => updateSettings({ shell: !st.settings.shell })}><i /></button>
     </div>
   );
 }

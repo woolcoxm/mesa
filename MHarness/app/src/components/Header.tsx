@@ -1,3 +1,4 @@
+import { sc } from '../state/platform';
 import { useState } from 'react';
 import { ChevronDown, Zap, Target, Activity, Check, PanelRight, ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react';
 import { DOCK_TABS, killRun, restartRun, presetLabel, setDockTab, setMode, setModel, setPreset, toggleDock } from '../state/store';
@@ -26,8 +27,8 @@ export function Header({ session }: { session: Session }) {
   return (
     <header className="hdr" onClick={() => menu && setMenu(null)}>
       <div className="hdr-left">
-        <button className={'pill pill-mode mode-' + session.mode} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'mode' ? null : 'mode'); }} title="Toggle mode (Ctrl+.)"><span className="pill-dot" />{MODES.find((m) => m.id === session.mode)?.label}<ChevronDown size={12} /></button>
-        <button className={'pill pill-preset preset-' + session.preset} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'preset' ? null : 'preset'); }} title="Permission preset (Ctrl+Shift+P)"><PresetIcon size={13} />{presetLabel(session.preset)}</button>
+        <button className={'pill pill-mode mode-' + session.mode} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'mode' ? null : 'mode'); }} title={`Toggle mode (${sc('Ctrl+.')})`}><span className="pill-dot" />{MODES.find((m) => m.id === session.mode)?.label}<ChevronDown size={12} /></button>
+        <button className={'pill pill-preset preset-' + session.preset} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'preset' ? null : 'preset'); }} title={`Permission preset (${sc('Ctrl+Shift+P')})`}><PresetIcon size={13} />{presetLabel(session.preset)}</button>
         {menu === 'mode' && (
           <div className="menu" onClick={(e) => e.stopPropagation()}>
             {MODES.map((m) => <button key={m.id} className={'menu-item' + (m.id === session.mode ? ' on' : '')} onClick={() => { setMode(session.id, m.id); setMenu(null); }}><div><b>{m.label}</b><div className="menu-sub">{m.hint}</div></div>{m.id === session.mode && <Check size={14} />}</button>)}
@@ -66,7 +67,7 @@ export function DockTabs() {
   return (
     <div className="dock-tabs" role="tablist">
       {DOCK_TABS.map((t) => (
-        <button key={t.id} role="tab" aria-selected={st.dock.tab === t.id} className={'dock-tab' + (st.dock.tab === t.id ? ' on' : '')} onClick={() => setDockTab(t.id)} title={`${t.label} (Ctrl+${t.key})`}>
+        <button key={t.id} role="tab" aria-selected={st.dock.tab === t.id} className={'dock-tab' + (st.dock.tab === t.id ? ' on' : '')} onClick={() => setDockTab(t.id)} title={`${t.label} (${sc('Ctrl+' + t.key)})`}>
           {t.label}
         </button>
       ))}

@@ -95,6 +95,30 @@ export async function listModels(cfg: ProviderConfig): Promise<string[]> {
   return list.map((m) => (typeof m === 'string' ? m : (m as { id?: string; name?: string })?.id ?? (m as { name?: string })?.name ?? '')).filter(Boolean).sort();
 }
 
+/** Server-side real shell (scripts/serve.mjs, opt-in). Streams lines; resolves with the exit code. */
+export async function runShellStream(args: { command: string; cwd: string; timeoutMs?: number; onLine: (stream: 'stdout' | 'stderr', line: string) => void; signal?: AbortSignal }): Promise<{ exitCode: number }> {
+  const res = await fetch('/__mesa/run', { method: 'POST', signal: args.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ command: args.command, cwd: args.cwd, timeoutMs: args.timeoutMs }) });
+  if (!res.ok || !res.body) { let msg = `${res.status}`; try { msg = (await res.json())?.error ?? msg; } catch { /* ignore */ } throw new Error(msg); }
+  const reader = res.body.getReader(); const dec = new TextDecoder();
+  let buf = ''; let exitCode = -1;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const events = buf.split('\n\n'); buf = events.pop() ?? '';
+    for (const ev of events) {
+      const line = ev.split('\n').find((l) => l.startsWith('data:'));
+      if (!line) continue;
+      try { const j = JSON.parse(line.slice(5).trim()); if (j.type === 'line') args.onLine(j.stream, j.line); else if (j.type === 'exit') exitCode = j.code; } catch { /* partial */ }
+    }
+  }
+  return { exitCode };
+}
+
+export async function shellStatus(): Promise<{ enabled: boolean; root?: string }> {
+  try { const r = await fetch('/__mesa/shell', { cache: 'no-store' }); return r.ok ? await r.json() : { enabled: false }; } catch { return { enabled: false }; }
+}
+
 export const SYSTEM_PROMPT_TOOLS = `You are Mesa, an agent working inside a visual harness. Be concise and concrete.
 You have tools. When the user wants a page, app, dashboard, chart or any visual thing, call present_html with the complete, self-contained HTML (inline CSS and JS, no external files) and keep your prose short. Use bash to run commands when it helps (ask only via the tool; the user approves in the UI). Use read_file to look at workspace files before editing them.
 After presenting an artifact, say in one or two sentences what you built and how to verify it. Never claim you created something without calling present_html.`;

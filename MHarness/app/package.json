@@ -2,12 +2,17 @@
   "name": "mesa",
   "private": true,
   "version": "0.1.0",
+  "description": "Mesa — a visual harness for LLM agents",
+  "license": "MIT",
   "type": "module",
+  "engines": { "node": ">=18" },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview --host 127.0.0.1 --port 5173"
+    "preview": "vite preview --host 127.0.0.1 --port 5173",
+    "serve": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",

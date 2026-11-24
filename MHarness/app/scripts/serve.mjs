@@ -1,24 +1,35 @@
-// Zero-dependency static server for the built app + a tiny dev proxy for model endpoints (no child processes, sandbox-friendly).
+// Zero-dependency static server for the built app + a tiny dev proxy for model endpoints + an optional real shell for live agents.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { spawn } from 'node:child_process';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Readable } from 'node:stream';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..', 'dist');
+const appRoot = join(root, '..');
+// The real shell may only run inside the repository root (the nearest ancestor with a .git folder), else the app folder.
+import { existsSync, statSync } from 'node:fs';
+import { dirname } from 'node:path';
+let workspaceRoot = appRoot;
+for (let d = appRoot; d !== dirname(d); d = dirname(d)) { if (existsSync(join(d, '.git'))) { workspaceRoot = d; break; } }
 const port = Number(process.env.PORT || 5173);
 // Only http(s) targets on the allow-list are proxied. Extend with PROXY_ALLOW="host1,host2" (comma-separated hostnames).
 const allow = new Set(['api.z.ai', 'api.openai.com', '10.0.0.169', ...(process.env.PROXY_ALLOW ?? '').split(',').map((s) => s.trim()).filter(Boolean)]);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2' };
 
-// Optional bootstrap config: mesa.config.json → { provider: {...}, agent: 'live' | 'demo' }.
+// Optional bootstrap config: mesa.config.json → { provider: {...}, agent: 'live' | 'demo', shell: boolean }.
 let bootConfig = {};
 try { bootConfig = JSON.parse(await readFile(join(root, '..', 'mesa.config.json'), 'utf8')); } catch { /* none */ }
+// Real shell for live agents is opt-in: "shell": true in mesa.config.json or MESA_SHELL=1. Always gated by the in-app approval takeover.
+const shellEnabled = bootConfig.shell === true || process.env.MESA_SHELL === '1';
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
   if (url.pathname === '/proxy') return proxy(req, res, url);
   if (url.pathname === '/__mesa/allow') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify([...allow])); }
+  if (url.pathname === '/__mesa/shell') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); return res.end(JSON.stringify({ enabled: shellEnabled, root: workspaceRoot })); }
+  if (url.pathname === '/__mesa/run') return runShell(req, res);
   if (url.pathname === '/__mesa/config') {
     // Local-only bootstrap config (mesa.config.json next to package.json). Served only to this origin.
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -38,6 +49,61 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(404); res.end('not found');
   }
 });
+
+// ---------- optional real shell for live agents (SSE) ----------
+async function runShell(req, res) {
+  if (!shellEnabled) {
+    res.writeHead(403, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'shell disabled on this server', hint: 'set "shell": true in mesa.config.json or MESA_SHELL=1' }));
+  }
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  let body;
+  try { body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); } catch { res.writeHead(400); return res.end('bad json'); }
+  const command = String(body.command ?? '').trim();
+  if (!command || command.length > 4000) { res.writeHead(400); return res.end('bad command'); }
+  let sendNote = '';
+  const caseFold = (s) => (process.platform === 'win32' || process.platform === 'darwin' ? s.toLowerCase() : s);
+  const requested = resolve(workspaceRoot, String(body.cwd ?? '.'));
+  if (caseFold(requested) !== caseFold(workspaceRoot) && !caseFold(requested).startsWith(caseFold(workspaceRoot + sep))) { res.writeHead(403); return res.end('cwd outside workspace'); }
+  let cwd = requested;
+  if (!existsSync(cwd) || !statSync(cwd).isDirectory()) {
+    sendNote = `mesa: cwd "${body.cwd}" not found — using ${workspaceRoot}`;
+    cwd = workspaceRoot;
+  }
+  const timeoutMs = Math.min(300_000, Math.max(1_000, Number(body.timeoutMs) || 60_000));
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+  const send = (obj) => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(obj)}\n\n`); };
+  const isWin = process.platform === 'win32';
+  // Small POSIX→cmd alias table so agent-issued `ls`/`cat` behave on Windows.
+  const aliases = { ls: 'dir /b', 'ls -la': 'dir', cat: 'type', pwd: 'cd', clear: 'cls', which: 'where', rm: 'del', mv: 'move', cp: 'copy' };
+  let cmdLine = command;
+  if (isWin) {
+    const first = command.split(/\s+/).slice(0, 2).join(' ');
+    const one = command.split(/\s+/)[0];
+    const hit = aliases[first] && aliases[first] !== aliases[one] ? [first, aliases[first]] : aliases[one] ? [one, aliases[one]] : null;
+    if (hit) cmdLine = aliases[hit[0]] + command.slice(hit[0].length);
+  }
+  // /s strips the outer quotes so inner quotes survive: cmd /d /s /c "node -e "console.log(1)""
+  // POSIX: the user's login shell ($SHELL — bash, zsh, fish…) with -c, so PATH tools like node/pnpm resolve as expected.
+  const userShell = process.env.SHELL || '/bin/sh';
+  const child = isWin
+    ? spawn('cmd.exe', ['/d', '/s', '/c', `"${cmdLine}"`], { cwd, env: { ...process.env, FORCE_COLOR: '0', CI: '1', NO_COLOR: '1' }, windowsHide: true, windowsVerbatimArguments: true })
+    : spawn(userShell, ['-c', cmdLine], { cwd, env: { ...process.env, FORCE_COLOR: '0', CI: '1', NO_COLOR: '1' } });
+  send({ type: 'started', pid: child.pid, cwd, command });
+  if (sendNote) send({ type: 'line', stream: 'stderr', line: sendNote });
+  const pump = (stream, name) => {
+    let buf = '';
+    stream.setEncoding('utf8');
+    stream.on('data', (d) => { buf += d; const lines = buf.split(/\r?\n/); buf = lines.pop(); for (const line of lines) send({ type: 'line', stream: name, line }); });
+    stream.on('end', () => { if (buf) send({ type: 'line', stream: name, line: buf }); });
+  };
+  pump(child.stdout, 'stdout'); pump(child.stderr, 'stderr');
+  const timer = setTimeout(() => { send({ type: 'line', stream: 'stderr', line: `mesa: killed after ${timeoutMs / 1000}s` }); child.kill(); }, timeoutMs);
+  child.on('error', (e) => { clearTimeout(timer); send({ type: 'line', stream: 'stderr', line: `mesa: ${e.message}` }); send({ type: 'exit', code: -1 }); res.end(); });
+  child.on('close', (code) => { clearTimeout(timer); send({ type: 'exit', code: code ?? -1 }); res.end(); });
+  req.on('close', () => { if (child.exitCode === null) child.kill(); });
+}
 
 async function proxy(req, res, url) {
   const target = url.searchParams.get('u');

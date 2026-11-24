@@ -1,10 +1,11 @@
+import { sc } from '../state/platform';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText, Pencil, Terminal as TerminalIcon, Eye, Globe, Search, Brain, Cpu, Play, Check, X, Loader2, Clock,
   ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2,
 } from 'lucide-react';
 import { Markdown } from './Markdown';
-import { openAdhocPreview, selectRun, setDockTab, toast } from '../state/store';
+import { isLiveAgent, openAdhocPreview, selectRun, setDockTab, toast } from '../state/store';
 import type { Block, DiffInfo, Session, ToolCall, Turn } from '../state/types';
 import { useStore } from '../state/useStore';
 
@@ -52,7 +53,7 @@ export function Thread({ session }: { session: Session }) {
 
 function EmptyThread() {
   const st = useStore();
-  const live = st.settings.agent === 'live' && !!st.settings.provider?.baseUrl;
+  const live = isLiveAgent();
   return (
     <div className="empty-thread">
       <div className="hero-mark"><span className="hero-dot" />Mesa</div>
@@ -65,7 +66,7 @@ function EmptyThread() {
         <button onClick={() => import('../state/store').then((m) => m.send('Run the tests and fix whatever fails'))}>🧪 Run the tests and fix whatever fails</button>
         <button onClick={() => import('../state/store').then((m) => m.send('Refactor: rename Series to TimeSeries across the repo'))}>🔁 Rename Series → TimeSeries across the repo</button>
       </div>
-      <div className="kbd-hints"><kbd>Ctrl</kbd><kbd>K</kbd> commands · <kbd>Ctrl</kbd><kbd>Enter</kbd> send · <kbd>Shift</kbd><kbd>Enter</kbd> inject · <kbd>Alt</kbd><kbd>A</kbd> approve</div>
+      <div className="kbd-hints"><kbd>{sc('Ctrl')}</kbd><kbd>K</kbd> commands · <kbd>{sc('Ctrl')}</kbd><kbd>Enter</kbd> send · <kbd>{sc('Shift')}</kbd><kbd>Enter</kbd> inject · <kbd>{sc('Alt')}</kbd><kbd>A</kbd> approve</div>
     </div>
   );
 }
