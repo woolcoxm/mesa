@@ -82,10 +82,12 @@ await shot('07-agents-board');
 await page.locator('.seg button:has-text("Tree")').click();
 await page.keyboard.press('Control+7'); await page.waitForTimeout(500);
 await shot('08-timeline');
-// 24 — stats with the token sparkline
-await page.keyboard.press('Control+6'); await page.waitForTimeout(600);
-await shot('24-stats-sparkline');
+// 24 — stats with the token sparkline (a session with several turns)
 await page.keyboard.press('Control+7');
+await page.locator('.new-btn').click(); await page.waitForTimeout(200);
+for (const prompt of ['What can you do here?', 'Summarise the demo workspace', 'Any tips for reviewing agent diffs?']) { await page.locator('.composer-input').fill(prompt); await page.keyboard.press('Enter'); await page.waitForSelector('.working', { timeout: 5000 }).catch(() => {}); await page.waitForFunction(() => !document.querySelector('.working') && !document.querySelector('.takeover') && !document.querySelector('.showcase'), null, { timeout: 30000 }); await page.waitForTimeout(300); }
+await page.locator('.thread').click({ position: { x: 5, y: 5 } }); await page.keyboard.press('Control+6'); await page.waitForTimeout(700);
+await shot('24-stats-sparkline');
 
 // 09 — gallery
 await page.keyboard.press('Control+Shift+g'); await page.waitForTimeout(500);
