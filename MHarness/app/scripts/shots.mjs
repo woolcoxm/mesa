@@ -92,6 +92,11 @@ await esc();
 await page.locator('.thread').click({ position: { x: 5, y: 5 } }); await page.keyboard.press('Control+k'); await page.waitForTimeout(300);
 await shot('11-palette');
 await esc();
+await page.locator('.thread').click({ position: { x: 5, y: 5 } });
+// 23 — hold Ctrl to reveal shortcut badges
+await page.keyboard.down('Control'); await page.waitForTimeout(450);
+await shot('23-key-hints');
+await page.keyboard.up('Control'); await page.waitForTimeout(200);
 
 // 12/13/14 — light theme preview, narrow layout, light shell
 await page.locator('.session-row', { hasText: 'Analyse revenue' }).first().click(); await page.keyboard.press('Control+3'); await page.waitForTimeout(600);

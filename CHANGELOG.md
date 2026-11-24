@@ -1,0 +1,26 @@
+# Changelog
+
+All notable changes to Mesa are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [0.2.0] — 2026-11-24
+
+### Added
+- **Real shell for live agents** — an agent's `bash` tool can run for real on the machine hosting `serve.mjs` (opt-in via `"shell": true` or `MESA_SHELL=1`), confined to the repository, with exit codes, timeouts and the approval takeover in front of every command. Windows uses `cmd.exe` with POSIX aliases (`ls`, `cat`, `pwd`…); macOS/Linux use `$SHELL -c`.
+- **Cross-platform** — CI matrix on Ubuntu, macOS and Windows with a real-shell smoke test (`pnpm smoke`); physical-key shortcuts that work on every layout; ⌘/⌥ labels and ⌃ secondary chords on macOS.
+- **Keyboard shortcut editor** — record chords, conflict rejection, per-row and global reset (#2).
+- **Publish with preflight** — scans HTML deliverables for secrets, source maps and untrusted scripts before hosting them at a local link (#4).
+- **Notebook renderer** — `.ipynb` deliverables with `In [n]` cells, markdown, outputs (HTML sandboxed) and "Convert to script"; the revenue demo ships one (#3).
+- **Canvas beside chat** — a resizable live pane for app, chart and notebook deliverables; the rail auto-collapses to make room.
+- **Guided tour** on first run, replayable from Settings and the palette; **accent colour** picker (six palettes); **hold Ctrl/⌘ to reveal shortcut badges**.
+- **Cross-browser persistence** — the workspace state file (`mesa.state.json`, git-ignored) mirrors every save; fresh browsers restore from it.
+- **Retry / Edit** on completed turns; session search matches message content; live-mode suggestions in the empty state.
+- `pnpm shots` regenerates every README screenshot from a deterministic demo run.
+
+### Fixed
+- Fifteen issues found by the systematic QA pass: active-session click on pages, showcase blocking new sessions, Esc not denying approvals, terminal `clear`, swallowed shortcuts from the terminal, stuck resize handles, clipped rail handle, grid overflow with long content, stale provider responses, false "request failed" on cancel, seed-time toasts, missing document title, hover peeks intercepting clicks, pnpm build-script approval in CI.
+
+## [0.1.0] — 2026-11-24
+
+Initial public build: three-pane shell, streaming thread with tool rows, approval takeover, completion showcase, right dock (artifacts, xterm console, sandboxed preview, files & diffs, agents, stats, timeline, browser), gallery, command palette, settings, Z.AI / Strata / OpenAI-compatible providers with tool calling, offline mock model, persistence, exports, light/dark themes, responsive layout.

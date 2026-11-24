@@ -13,8 +13,9 @@ import { Confetti } from './components/Confetti';
 import { Tour } from './components/Tour';
 import { CanvasPane } from './components/CanvasPane';
 import { PublishDialog } from './components/PublishDialog';
+import { KeyHints } from './components/KeyHints';
 import { useNarrow, useStore } from './state/useStore';
-import { applyAccent } from './state/platform';
+import { applyAccent, sc } from './state/platform';
 import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette } from './state/store';
 import { Sparkles } from 'lucide-react';
 
@@ -54,7 +55,7 @@ export function App() {
       </main>
       {st.dock.open && (
         <aside className="dock" aria-label="Right dock">
-          <div className="dock-head"><DockTabs /><div className="dock-tools"><span className="muted" style={{ fontSize: 11 }}>{jobs ? `⚡ ${jobs}` : ''}</span><button className="icon-btn sm" title="Float / unfloat (Ctrl+Shift+F)" onClick={() => setDockFloating(!st.dock.floating)}>⧉</button>{glow && <span className="hdr-glow" />}</div></div>
+          <div className="dock-head"><DockTabs /><div className="dock-tools"><span className="muted" style={{ fontSize: 11 }}>{jobs ? `⚡ ${jobs}` : ''}</span><button className="icon-btn sm" data-key={sc('Shift+F')} title="Float / unfloat (Ctrl+Shift+F)" onClick={() => setDockFloating(!st.dock.floating)}>⧉</button>{glow && <span className="hdr-glow" />}</div></div>
           <div className="dock-body">{session && (st.dock.tab === 'artifacts' ? <ArtifactsTab session={session} /> : st.dock.tab === 'run' ? <RunConsole session={session} /> : st.dock.tab === 'preview' ? <PreviewTab session={session} /> : st.dock.tab === 'files' ? <FilesTab session={session} /> : st.dock.tab === 'agents' ? <AgentsTab session={session} /> : st.dock.tab === 'stats' ? <StatsTab session={session} /> : st.dock.tab === 'timeline' ? <TimelineTab session={session} /> : <BrowserTab session={session} />)}</div>
           <div className="dock-resize" onPointerDown={(e) => {
             e.preventDefault();
@@ -72,6 +73,7 @@ export function App() {
       <Confetti />
       <Tour />
       <PublishDialog />
+      <KeyHints />
       <TrayStack />
       <Toasts />
       <Palette />

@@ -181,7 +181,7 @@ export function StatsTab({ session }: { session: Session }) {
       <div className="stat-cards">
         <div className="stat"><span>Context</span><b>{session.tokens.toLocaleString()}</b><i>/ {session.contextMax.toLocaleString()}</i></div>
         <div className="stat"><span>Cache hit</span><b>{Math.round(session.cacheHit * 100)} %</b></div>
-        <div className="stat"><span>Cost</span><b>${tot.$.toFixed(4)}</b></div>
+        <div className="stat"><span>Cost</span><b>${tot.$.toFixed(4)}</b><i>{rows.some((r) => r.usage.costEstimated) ? 'estimated · list pricing' : rows.some((t) => t.usage.inputTokens > 0) ? 'unpriced model' : ''}</i></div>
         <div className="stat"><span>Avg latency</span><b>{rows.length ? (tot.ms / rows.length / 1000).toFixed(1) : '0'}s</b></div>
       </div>
       <table className="stats-table"><thead><tr><th>Turn</th><th>Tools</th><th>In</th><th>Out</th><th>Cached</th><th>Time</th><th>Cost</th></tr></thead>

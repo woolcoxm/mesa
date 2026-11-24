@@ -44,10 +44,10 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
           <span className="ws-mark">M</span>
           {open && <><span className="ws-name">mesa-demo</span><ChevronDown size={14} /></>}
         </button>
-        <button className="icon-btn" title="Toggle rail (Ctrl+\)" onClick={toggleRail}><PanelLeftClose size={16} /></button>
+        <button className="icon-btn" data-key="\" title="Toggle rail (Ctrl+\)" onClick={toggleRail}><PanelLeftClose size={16} /></button>
       </div>
       {open && (
-        <button className="new-btn" onClick={newSessionAction} title="New session (Ctrl+N)"><Plus size={16} /><span>New session</span><kbd>N</kbd></button>
+        <button className="new-btn" data-key="N" onClick={newSessionAction} title="New session (Ctrl+N)"><Plus size={16} /><span>New session</span><kbd>N</kbd></button>
       )}
       <div className="rail-search">
         <Search size={14} />
@@ -77,9 +77,9 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
       <div className="rail-nav">
         <button className={'nav-row' + (st.dock.tab === 'agents' ? ' on' : '')} onClick={() => { openPage('session'); setDockTab('agents'); }}><Bot size={16} /><span>Agents</span><span className="count">{st.sessions.reduce((n, s) => n + s.agents.length, 0) || ''}</span></button>
         <button className={'nav-row' + (st.page === 'automations' ? ' on' : '')} onClick={() => openPage('automations')}><CalendarClock size={16} /><span>Automations</span></button>
-        <button className={'nav-row'} onClick={() => toggleGallery(true)}><Layers size={16} /><span>Gallery</span><span className="count">{st.sessions.reduce((n, s) => n + s.artifacts.filter((a) => a.pinned).length, 0) || ''}</span></button>
+        <button className={'nav-row'} data-key={sc('Shift+G')} onClick={() => toggleGallery(true)}><Layers size={16} /><span>Gallery</span><span className="count">{st.sessions.reduce((n, s) => n + s.artifacts.filter((a) => a.pinned).length, 0) || ''}</span></button>
         <button className={'nav-row' + (st.page === 'plugins' ? ' on' : '')} onClick={() => openPage('plugins')}><Puzzle size={16} /><span>Plugins & Skills</span></button>
-        <button className={'nav-row'} onClick={() => togglePalette(true)}><Sparkles size={16} /><span>Commands</span><kbd>{sc('Ctrl+K')}</kbd></button>
+        <button className={'nav-row'} data-key="K" onClick={() => togglePalette(true)}><Sparkles size={16} /><span>Commands</span><kbd>{sc('Ctrl+K')}</kbd></button>
       </div>
       <div className="rail-bottom">
         <button className={'nav-row' + (st.page === 'settings' ? ' on' : '')} onClick={() => openPage('settings')}><Settings size={16} /><span>Settings</span></button>

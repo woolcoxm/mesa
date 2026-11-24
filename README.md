@@ -110,7 +110,9 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 ## Keyboard
 
-Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
+![Hold Ctrl to reveal shortcut badges](docs/screenshots/23-key-hints.png)
+
+Hold **Ctrl/⌘** to reveal every available shortcut as a badge on its control. Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
 
 | | | | |
 |---|---|---|---|
@@ -160,6 +162,6 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), and cross-platform CI with a real-shell smoke test. Still planned: SQLite + FTS5 for large histories (#1), notebook cell execution against a kernel (#7), ACP bridge for external agents (#5), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
-## License
+## Changelog & license
 
-[MIT](LICENSE) © 2026 Mark W.
+See [CHANGELOG.md](CHANGELOG.md) for releases. [MIT](LICENSE) © 2026 Mark W.

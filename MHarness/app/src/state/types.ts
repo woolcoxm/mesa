@@ -52,7 +52,7 @@ export type Block =
   | { id: Id; type: 'text'; text: string; streaming: boolean }
   | { id: Id; type: 'tool'; call: ToolCall };
 
-export interface Usage { inputTokens: number; outputTokens: number; cachedTokens: number; costUsd: number; latencyMs: number }
+export interface Usage { inputTokens: number; outputTokens: number; cachedTokens: number; costUsd: number; latencyMs: number; costEstimated?: boolean }
 
 export interface Artifact {
   id: Id;

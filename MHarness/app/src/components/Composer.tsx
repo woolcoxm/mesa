@@ -83,7 +83,7 @@ export function Composer({ session }: { session: Session }) {
             <input ref={fileInput} type="file" multiple hidden aria-label="Attach files" onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) { const names = files.map((f) => '@' + f.name).join(' '); setText((t) => (t ? t + ' ' : '') + names + ' '); toast(`Attached ${files.length} file${files.length === 1 ? '' : 's'}`, 'success'); } e.target.value = ''; }} />
             <button className="icon-btn" title="Reference a file with @" onClick={() => { setText(text + '@'); ta.current?.focus(); }}><AtSign size={15} /></button>
             <button className="icon-btn" title="Slash command" onClick={() => { setText('/'); ta.current?.focus(); }}><Slash size={15} /></button>
-            <button className="icon-btn" title="Commands (Ctrl+K)" onClick={() => togglePalette(true)}><Sparkles size={15} /></button>
+            <button className="icon-btn" data-key="K" title="Commands (Ctrl+K)" onClick={() => togglePalette(true)}><Sparkles size={15} /></button>
             <span className="composer-hint"><kbd>Enter</kbd> send · <kbd>{sc('Shift')}</kbd><kbd>Enter</kbd> {live ? 'inject' : 'newline'}{live && <> · <kbd>{sc('Alt')}</kbd><kbd>Enter</kbd> queue</>}</span>
           </div>
           <textarea ref={ta} className="composer-input" rows={1} placeholder={live ? 'Steer the agent — queue a message or inject at the next tool call…' : 'Ask Mesa to build, analyse, fix or refactor…'} value={text} onChange={(e) => onChange(e.target.value)} onKeyDown={onKey} aria-label="Message" />

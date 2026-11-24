@@ -148,3 +148,16 @@ export async function testProvider(cfg: ProviderConfig): Promise<string> {
   const r = await h.done;
   return (r.text.trim() || (r.toolCalls.length ? `wants to call ${r.toolCalls[0].function.name}` : '')).slice(0, 40) || 'connected';
 }
+
+// ---------- cost estimates (USD per 1M tokens; null when the model is unknown) ----------
+const PRICING: [RegExp, number, number][] = [
+  [/gpt-4o-mini/i, 0.15, 0.6], [/gpt-4o\b/i, 2.5, 10], [/o3-mini/i, 1.1, 4.4],
+  [/claude-sonnet/i, 3, 15], [/claude-haiku/i, 0.8, 4], [/claude-opus/i, 15, 75],
+  [/glm-4\.5-air/i, 0.11, 0.28], [/glm-4\.6/i, 0.6, 2.2], [/glm-4\.5\b/i, 0.6, 2.2],
+  [/deepseek-chat/i, 0.27, 1.1], [/llama-3\.1-8b/i, 0.05, 0.08], [/qwen.*72b/i, 0.4, 0.8],
+];
+export function estimateCostUsd(model: string, inputTokens: number, outputTokens: number): number | null {
+  const hit = PRICING.find(([re]) => re.test(model));
+  if (!hit) return null;
+  return +((inputTokens * hit[1] + outputTokens * hit[2]) / 1_000_000).toFixed(5);
+}

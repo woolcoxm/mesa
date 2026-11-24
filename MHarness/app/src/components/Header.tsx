@@ -27,8 +27,8 @@ export function Header({ session }: { session: Session }) {
   return (
     <header className="hdr" onClick={() => menu && setMenu(null)}>
       <div className="hdr-left">
-        <button className={'pill pill-mode mode-' + session.mode} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'mode' ? null : 'mode'); }} title={`Toggle mode (${sc('Ctrl+.')})`}><span className="pill-dot" />{MODES.find((m) => m.id === session.mode)?.label}<ChevronDown size={12} /></button>
-        <button className={'pill pill-preset preset-' + session.preset} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'preset' ? null : 'preset'); }} title={`Permission preset (${sc('Ctrl+Shift+P')})`}><PresetIcon size={13} />{presetLabel(session.preset)}</button>
+        <button data-key="." className={'pill pill-mode mode-' + session.mode} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'mode' ? null : 'mode'); }} title={`Toggle mode (${sc('Ctrl+.')})`}><span className="pill-dot" />{MODES.find((m) => m.id === session.mode)?.label}<ChevronDown size={12} /></button>
+        <button data-key={sc('Shift+P')} className={'pill pill-preset preset-' + session.preset} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'preset' ? null : 'preset'); }} title={`Permission preset (${sc('Ctrl+Shift+P')})`}><PresetIcon size={13} />{presetLabel(session.preset)}</button>
         {menu === 'mode' && (
           <div className="menu" onClick={(e) => e.stopPropagation()}>
             {MODES.map((m) => <button key={m.id} className={'menu-item' + (m.id === session.mode ? ' on' : '')} onClick={() => { setMode(session.id, m.id); setMenu(null); }}><div><b>{m.label}</b><div className="menu-sub">{m.hint}</div></div>{m.id === session.mode && <Check size={14} />}</button>)}
@@ -56,7 +56,7 @@ export function Header({ session }: { session: Session }) {
             {runningJobs.map((r) => <div key={r.id} className="menu-item job-item"><div><b>{r.command}</b><div className="menu-sub">{r.runtime} · {r.cwd}{r.port ? ` · :${r.port}` : ''}</div></div><button className="chip-btn" onClick={() => restartRun(session.id, r.id)}>Restart</button><button className="chip-btn danger" onClick={() => killRun(session.id, r.id)}>Kill</button></div>)}
           </div>
         )}
-        <button className="icon-btn" title="Toggle right dock (Ctrl+Shift+\)" onClick={toggleDock}><PanelRight size={15} /></button>
+        <button className="icon-btn" data-key={sc('Shift+\\')} title="Toggle right dock (Ctrl+Shift+\)" onClick={toggleDock}><PanelRight size={15} /></button>
       </div>
     </header>
   );
@@ -67,7 +67,7 @@ export function DockTabs() {
   return (
     <div className="dock-tabs" role="tablist">
       {DOCK_TABS.map((t) => (
-        <button key={t.id} role="tab" aria-selected={st.dock.tab === t.id} className={'dock-tab' + (st.dock.tab === t.id ? ' on' : '')} onClick={() => setDockTab(t.id)} title={`${t.label} (${sc('Ctrl+' + t.key)})`}>
+        <button key={t.id} role="tab" data-key={t.key} aria-selected={st.dock.tab === t.id} className={'dock-tab' + (st.dock.tab === t.id ? ' on' : '')} onClick={() => setDockTab(t.id)} title={`${t.label} (${sc('Ctrl+' + t.key)})`}>
           {t.label}
         </button>
       ))}

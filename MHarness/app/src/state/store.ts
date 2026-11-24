@@ -3,7 +3,7 @@ import type {
   Run, Session, Toast, TLEvent, ToolCall, Turn, Usage,
 } from './types';
 import { pickScenario, SEED_PLAN, type ArtifactSeed, type SceneStep, type Scenario } from '../agent/scenarios';
-import { extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
+import { estimateCostUsd, extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
 
 export const uid = (): Id => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -703,7 +703,9 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
     made.push(a);
     updateSession(sessionId, (s) => { s.artifacts = [...s.artifacts, a]; s.hasDeliverables = true; s.turns = s.turns.map((t) => (t.id === turnId ? { ...t, deliverables: [...t.deliverables, a.id] } : t)); });
   }
-  const usage: Usage = { inputTokens: Math.round(messages.reduce((n, m) => n + m.content.length, 0) / 4), outputTokens: outTokens || Math.round(allText.length / 4), cachedTokens: 0, costUsd: 0, latencyMs: Date.now() - started };
+  const inTok = Math.round(messages.reduce((n, m) => n + m.content.length, 0) / 4); const outTok = outTokens || Math.round(allText.length / 4);
+  const est = estimateCostUsd(cfg.model, inTok, outTok);
+  const usage: Usage = { inputTokens: inTok, outputTokens: outTok, cachedTokens: 0, costUsd: est ?? 0, costEstimated: est !== null, latencyMs: Date.now() - started };
   const turn = state.sessions.find((x) => x.id === sessionId)?.turns.find((t) => t.id === turnId);
   if (!turn) return;
   const cancelled = turn.status === 'cancelled';
