@@ -10,13 +10,16 @@ import { Palette } from './components/Palette';
 import { Gallery } from './components/Gallery';
 import { Toasts, SettingsPage, PluginsPage, AutomationsPage } from './components/Pages';
 import { Confetti } from './components/Confetti';
+import { Tour } from './components/Tour';
 import { useNarrow, useStore } from './state/useStore';
+import { applyAccent } from './state/platform';
 import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette } from './state/store';
 import { Sparkles } from 'lucide-react';
 
 export function App() {
   const st = useStore();
   const narrow = useNarrow();
+  useEffect(() => { applyAccent(st.settings.accent); }, [st.settings.accent]);
   const session = st.sessions.find((s) => s.id === st.activeSessionId);
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -59,6 +62,7 @@ export function App() {
       {glow && session && <div className="glow-chip"><Sparkles size={12} /> {st.sessions.find((s) => s.id === st.showcase?.sessionId)?.turns.find((t) => t.id === st.showcase?.turnId)?.deliverables.length ?? 0} deliverables docked</div>}
       <Showcase />
       <Confetti />
+      <Tour />
       <TrayStack />
       <Toasts />
       <Palette />

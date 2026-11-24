@@ -41,7 +41,9 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Settings](docs/screenshots/10-settings.png) | ![Light theme](docs/screenshots/14-light-shell.png) |
 | **Settings** — provider presets (Z.AI, Strata, OpenAI, custom, mock), "Fetch models", "Test connection", export JSONL/Markdown, reset. | **Light theme** — the same tokens; dark and light both meet WCAG AA contrast. |
 | ![Narrow layout](docs/screenshots/13-narrow-900.png) | ![Timeline](docs/screenshots/08-timeline.png) |
-| **Responsive** — the rail collapses to icons under 960 px and the dock is capped, so the thread stays usable on a laptop. | **Timeline** — every event with timing bars; click an event to flash its tool row in the thread; checkpoints are restorable. |
+| **Narrow layout** — the rail collapses to icons under 960 px and the dock is capped, so the thread stays usable on a laptop. | **Timeline** — every event with timing bars; click an event to flash its tool row in the thread; checkpoints are restorable. |
+| ![Guided tour](docs/screenshots/18-tour.png) | ![Accent colours](docs/screenshots/17-accent-rose.png) |
+| **Guided tour** — an animated spotlight walks through the shell on first run; replay from Settings or the palette. | **Accent colours** — six palettes re-tint buttons, cursors, charts and the showcase in both themes. |
 
 ---
 
@@ -57,7 +59,7 @@ pnpm build            # vite build → dist/
 pnpm serve            # → http://127.0.0.1:5173  (same as `node scripts/serve.mjs`)
 ```
 
-Open **http://127.0.0.1:5173**. It boots with five scripted demo sessions — click **Build a small flashy dashboard app** in the empty state to see the full loop: plan → edits with diffs → an install approval → dev-server job → preview → three deliverables and the showcase.
+Open **http://127.0.0.1:5173**. A 60-second guided tour spotlights the rail, composer, header and dock on first run (replay it from Settings or `Ctrl+K`). It boots with five scripted demo sessions — click **Build a small flashy dashboard app** in the empty state to see the full loop: plan → edits with diffs → an install approval → dev-server job → preview → three deliverables and the showcase.
 
 > `pnpm dev` (Vite dev server + HMR) works too, but `pnpm serve` is the full experience: it also hosts the model proxy, the bootstrap config and the offline mock model. Keyboard shortcuts use **⌘/⌥** on macOS and **Ctrl/Alt** elsewhere, and are matched by physical key so they work on every keyboard layout.
 

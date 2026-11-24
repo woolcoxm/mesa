@@ -1,3 +1,4 @@
+import { startTour } from './Tour';
 import { sc } from '../state/platform';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, Moon, Sun, PanelRight, Layers, BellOff, PanelLeft, Sparkles, AppWindow, ChartColumn, TestTube2, GitBranch, Keyboard, Settings, Puzzle, CalendarClock, Cpu, Zap, Command } from 'lucide-react';
@@ -27,6 +28,7 @@ export function Palette() {
       { id: 'gallery', t: 'Open Gallery', k: sc('Ctrl+Shift+G'), icon: Layers, run: () => toggleGallery(true) },
       ...DOCK_TABS.map((t) => ({ id: 'tab-' + t.id, t: 'Open · ' + t.label, k: sc('Ctrl+' + t.key), icon: t.id === 'preview' ? AppWindow : t.id === 'agents' ? GitBranch : t.id === 'stats' ? Cpu : t.id === 'run' ? Zap : Sparkles, run: () => setDockTab(t.id) })),
       { id: 'settings', t: 'Open Settings', k: '', icon: Settings, run: () => openPage('settings') },
+      { id: 'tour', t: 'Replay the guided tour', k: '', icon: Sparkles, run: () => startTour() },
       { id: 'plugins', t: 'Open Plugins & Skills', k: '', icon: Puzzle, run: () => openPage('plugins') },
       { id: 'autos', t: 'Open Automations', k: '', icon: CalendarClock, run: () => openPage('automations') },
     ];

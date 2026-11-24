@@ -20,3 +20,25 @@ export function shellName(): string {
   if (IS_MAC) return 'your $SHELL (zsh)';
   return 'your $SHELL (sh)';
 }
+
+// ---------- accent palettes (re-tint the whole UI; every component reads --mesa-accent*) ----------
+export interface Accent { id: string; name: string; light: string; dark: string }
+export const ACCENTS: Accent[] = [
+  { id: 'indigo', name: 'Indigo', light: '#4f5bd9', dark: '#7c86ff' },
+  { id: 'violet', name: 'Violet', light: '#7c3aed', dark: '#a78bfa' },
+  { id: 'teal', name: 'Teal', light: '#0d9488', dark: '#2dd4bf' },
+  { id: 'rose', name: 'Rose', light: '#e11d48', dark: '#fb7185' },
+  { id: 'amber', name: 'Amber', light: '#d97706', dark: '#fbbf24' },
+  { id: 'green', name: 'Green', light: '#16a34a', dark: '#4ade80' },
+];
+export const accentById = (id: string) => ACCENTS.find((a) => a.id === id) ?? ACCENTS[0];
+function rgba(hex: string, alpha: number) { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`; }
+/** Writes the accent variables for both themes; the active theme picks the right one via [data-theme]. */
+export function applyAccent(id: string) {
+  const a = accentById(id);
+  let tag = document.getElementById('mesa-accent') as HTMLStyleElement | null;
+  if (!tag) { tag = document.createElement('style'); tag.id = 'mesa-accent'; document.head.appendChild(tag); }
+  // Appended after the app stylesheet, so it wins at equal specificity; inline root vars would not, because [data-theme] is a selector.
+  tag.textContent = `:root { --mesa-accent: ${a.light}; --mesa-accent-soft: ${rgba(a.light, 0.12)}; --mesa-accent-glow: ${rgba(a.light, 0.35)}; }
+[data-theme="dark"] { --mesa-accent: ${a.dark}; --mesa-accent-soft: ${rgba(a.dark, 0.16)}; --mesa-accent-glow: ${rgba(a.dark, 0.45)}; }`;
+}

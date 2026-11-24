@@ -5,7 +5,7 @@ import {
   ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2,
 } from 'lucide-react';
 import { Markdown } from './Markdown';
-import { isLiveAgent, openAdhocPreview, selectRun, setDockTab, toast } from '../state/store';
+import { isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
 import type { Block, DiffInfo, Session, ToolCall, Turn } from '../state/types';
 import { useStore } from '../state/useStore';
 
@@ -51,6 +51,19 @@ export function Thread({ session }: { session: Session }) {
   );
 }
 
+type Suggestion = [icon: string, label: string, prompt: string];
+const DEMO_SUGGESTIONS: Suggestion[] = [
+  ['⚡', 'Build a small flashy dashboard app', 'Build a small flashy dashboard app with Vite'],
+  ['📈', 'Analyse the revenue data and make a chart', 'Analyse the revenue data and make a chart'],
+  ['🧪', 'Run the tests and fix whatever fails', 'Run the tests and fix whatever fails'],
+  ['🔁', 'Rename Series → TimeSeries across the repo', 'Refactor: rename Series to TimeSeries across the repo'],
+];
+const LIVE_SUGGESTIONS: Suggestion[] = [
+  ['⚡', 'Build a glowing click-counter page', 'Build a tiny self-contained HTML page with one big glowing button that counts clicks. Include a <title>.'],
+  ['📊', 'Make a bar chart from sample data', 'Make a self-contained HTML page with a bar chart of monthly revenue (Jan 182k, Feb 201k, Mar 198k, Apr 244k, May 262k, Jun 299k, Jul 331k). Include a <title>.'],
+  ['🎨', 'Design a landing page hero', 'Design a dark, minimal landing-page hero for an AI agent harness called Mesa, with a gradient headline and one call-to-action button. Self-contained HTML with a <title>.'],
+  ['🧠', 'Explain a concept with a diagram', 'Explain how an event-sourced session ledger works, and include a small self-contained HTML diagram (boxes and arrows) illustrating it.'],
+];
 function EmptyThread() {
   const st = useStore();
   const live = isLiveAgent();
@@ -61,10 +74,9 @@ function EmptyThread() {
       <h2>Where your agent works in the open.</h2>
       <p>Ask for something that produces a thing — an app, a chart, a fix — and it shows up on the right as a deliverable you can <b>open</b>, <b>run</b>, <b>compare</b> and <b>share</b>.</p>
       <div className="suggest">
-        <button onClick={() => import('../state/store').then((m) => m.send('Build a small flashy dashboard app with Vite'))}>⚡ Build a small flashy dashboard app</button>
-        <button onClick={() => import('../state/store').then((m) => m.send('Analyse the revenue data and make a chart'))}>📈 Analyse the revenue data and make a chart</button>
-        <button onClick={() => import('../state/store').then((m) => m.send('Run the tests and fix whatever fails'))}>🧪 Run the tests and fix whatever fails</button>
-        <button onClick={() => import('../state/store').then((m) => m.send('Refactor: rename Series to TimeSeries across the repo'))}>🔁 Rename Series → TimeSeries across the repo</button>
+        {(live ? LIVE_SUGGESTIONS : DEMO_SUGGESTIONS).map(([icon, label, prompt]) => (
+          <button key={label} onClick={() => send(prompt)}>{icon} {label}</button>
+        ))}
       </div>
       <div className="kbd-hints"><kbd>{sc('Ctrl')}</kbd><kbd>K</kbd> commands · <kbd>{sc('Ctrl')}</kbd><kbd>Enter</kbd> send · <kbd>{sc('Shift')}</kbd><kbd>Enter</kbd> inject · <kbd>{sc('Alt')}</kbd><kbd>A</kbd> approve</div>
     </div>

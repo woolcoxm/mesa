@@ -165,6 +165,8 @@ export interface Settings {
   dockWidth: number;
   agent: 'demo' | 'live';
   shell: boolean;
+  accent: string;
+  tourDone: boolean;
   provider?: { baseUrl: string; apiKey: string; model: string; preset: string; proxy: boolean; tools?: boolean };
 }
 
@@ -185,4 +187,5 @@ export interface AppState {
   confetti: { n: number; x: number; y: number } | null;
   adhoc: { title: string; html: string } | null;
   focus: { callId: Id; n: number } | null;
+  tour: number | null;
 }

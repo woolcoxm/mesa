@@ -700,3 +700,23 @@ kbd { font-family: var(--mesa-type-sans); font-size: 10px; padding: 1px 5px; bor
 .pf-actions { flex-wrap: wrap; row-gap: 8px; }
 .pf-actions .tk-remember { white-space: nowrap; }
 .pf-status { flex: 1 1 220px; text-align: right; min-height: 18px; }
+
+/* ---------- accent swatches ---------- */
+.swatches { display: flex; gap: 8px; }
+.swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent; background: var(--sw); box-shadow: inset 0 0 0 2px var(--mesa-bg-surface); transition: transform var(--mesa-m-fast) var(--mesa-e-spring), border-color var(--mesa-m-fast); }
+.swatch:hover { transform: scale(1.15); }
+.swatch.on { border-color: var(--sw); transform: scale(1.12); }
+/* ---------- guided tour ---------- */
+.tour { position: fixed; inset: 0; z-index: 120; pointer-events: none; }
+.tour-spot { position: absolute; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(3, 5, 10, 0.62), 0 0 0 2px var(--mesa-accent), 0 0 40px var(--mesa-accent-glow); transition: left .45s var(--mesa-e-out), top .45s var(--mesa-e-out), width .45s var(--mesa-e-out), height .45s var(--mesa-e-out); pointer-events: auto; }
+.tour-card { position: absolute; width: 340px; padding: 14px 16px 12px; border-radius: 14px; background: var(--mesa-bg-elevated); backdrop-filter: blur(var(--mesa-blur)); border: 1px solid var(--mesa-border-strong); box-shadow: var(--mesa-e3); pointer-events: auto; animation: tourCard .35s var(--mesa-e-spring); }
+@keyframes tourCard { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+.tour-card.tour-top { animation-name: tourCardTop; }
+@keyframes tourCardTop { from { opacity: 0; transform: translateY(-8px) scale(.97); } }
+.tour-card.tour-top { transform: none; }
+.tour-step { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mesa-accent); }
+.tour-title { font-size: 15px; font-weight: 600; margin-top: 2px; }
+.tour-body { font-size: 12.5px; line-height: 1.55; color: var(--mesa-text-secondary); margin: 6px 0 10px; }
+.tour-body kbd { font-size: 10px; }
+.tour-actions { display: flex; align-items: center; gap: 8px; }
+.tour-hint { margin-top: 8px; font-size: 10px; color: var(--mesa-text-muted); display: flex; gap: 4px; align-items: center; }

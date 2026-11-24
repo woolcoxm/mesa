@@ -24,7 +24,12 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
   const [renaming, setRenaming] = useState<string | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const open = st.rail.open && !forceCollapsed && st.settings.sidebarWidth > 80;
-  const filtered = useMemo(() => st.sessions.filter((s) => !st.rail.search || s.title.toLowerCase().includes(st.rail.search.toLowerCase())), [st.sessions, st.rail.search]);
+  const filtered = useMemo(() => {
+    const q = st.rail.search.trim().toLowerCase();
+    if (!q) return st.sessions;
+    // Match the title, or any user message / agent answer in the session (content search across sessions).
+    return st.sessions.filter((s) => s.title.toLowerCase().includes(q) || s.turns.some((t) => t.user.toLowerCase().includes(q) || t.blocks.some((b) => b.type === 'text' && b.text.toLowerCase().includes(q))));
+  }, [st.sessions, st.rail.search]);
 
   const grouped = useMemo(() => {
     const m: Record<string, Session[]> = {};
@@ -46,7 +51,7 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
       )}
       <div className="rail-search">
         <Search size={14} />
-        <input placeholder="Search sessions" value={st.rail.search} onChange={(e) => setRailSearch(e.target.value)} aria-label="Search sessions" />
+        <input placeholder="Search sessions & messages" value={st.rail.search} onChange={(e) => setRailSearch(e.target.value)} aria-label="Search sessions" />
         <kbd>{sc('Ctrl+K')}</kbd>
       </div>
       <div className="rail-sessions" role="tree" aria-label="Sessions">

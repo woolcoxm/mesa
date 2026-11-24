@@ -61,12 +61,13 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false },
   canvasSplit: null,
   insert: null,
   confetti: null,
   adhoc: null,
   focus: null,
+  tour: null,
 };
 
 let state: AppState = initial;
@@ -216,6 +217,7 @@ export function setCheckpoint(sessionId: Id, label: string, auto = false) {
 
 export function insertIntoComposer(text: string) { state = { ...state, insert: { text, n: Date.now() } }; emit(); }
 export function clearInsert() { if (state.insert) { state = { ...state, insert: null }; } }
+export function setTour(step: number | null) { state = { ...state, tour: step }; emit(); }
 export function isLiveAgent() { const p = state.settings.provider; return state.settings.agent === 'live' && !!p?.baseUrl && (!!p.apiKey || p.preset === 'mock'); }
 export function focusCall(callId: Id) { state = { ...state, focus: { callId, n: Date.now() } }; emit(); }
 export function openAdhocPreview(title: string, html: string) { state = { ...state, adhoc: { title, html }, dock: { ...state.dock, tab: 'preview', open: true } }; emit(); }
@@ -724,6 +726,8 @@ export async function seed() {
     }
   } catch { /* not served by serve.mjs — fine */ }
   if (saved) { emit(); return; }
+  // First run: open the guided tour once the seeded sessions are in place.
+  state = { ...state, tour: 0 };
   const now = Date.now();
   const mk = (id: string, title: string, group: Session['group'], ago: number, scenarioId?: string) => newSession({ id, title, group, createdAt: now - ago, updatedAt: now - ago });
   const s1 = mk('s-app', 'Build a dashboard app', 'Today', 1000 * 60 * 60 * 2);

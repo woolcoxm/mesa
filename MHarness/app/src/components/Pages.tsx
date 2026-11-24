@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Check, Info, AlertTriangle, OctagonAlert, Sun, Moon, Monitor, Sparkles, Puzzle, CalendarClock, Power, Keyboard, SlidersHorizontal } from 'lucide-react';
 import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings } from '../state/store';
+import { startTour } from './Tour';
 import { listModels, PROVIDER_PRESETS, shellStatus, testProvider } from '../agent/provider';
-import { sc, shellName } from '../state/platform';
+import { ACCENTS, sc, shellName } from '../state/platform';
 import { useStore } from '../state/useStore';
 
 const ICON: Record<string, typeof Info> = { info: Info, success: Check, warning: AlertTriangle, error: OctagonAlert };
@@ -31,6 +32,7 @@ export function SettingsPage() {
       <section className="set-section"><h4>Appearance</h4>
         <Row label="Theme"><div className="seg">{(['system', 'light', 'dark'] as const).map((t) => <button key={t} className={s.theme === t ? 'on' : ''} onClick={() => updateSettings({ theme: t })}>{t === 'light' ? <Sun size={12} /> : t === 'dark' ? <Moon size={12} /> : <Monitor size={12} />}{t}</button>)}</div></Row>
         <Row label="Density" sub="Row height and line spacing"><div className="seg">{(['comfortable', 'compact', 'terminal'] as const).map((d) => <button key={d} className={s.density === d ? 'on' : ''} onClick={() => updateSettings({ density: d })}>{d}</button>)}</div></Row>
+        <Row label="Accent" sub="Re-tints buttons, streaming cursors, charts and the showcase"><div className="swatches" role="radiogroup" aria-label="Accent colour">{ACCENTS.map((a) => <button key={a.id} role="radio" aria-checked={s.accent === a.id} title={a.name} className={'swatch' + (s.accent === a.id ? ' on' : '')} style={{ ['--sw' as string]: a.dark }} onClick={() => updateSettings({ accent: a.id })} />)}</div></Row>
         <Row label="Completion effects" sub="Accent sweep and header glow when a turn finishes fully verified"><Toggle on={s.effects} onChange={(v) => updateSettings({ effects: v })} /></Row>
         <Row label="Do not disturb" sub="Showcases dock silently to the Gallery instead of sliding in"><Toggle on={s.dnd} onChange={(v) => updateSettings({ dnd: v })} /></Row>
         <Row label="Notifications" sub="Browser notifications for approvals and finished work while the window is in the background"><Toggle on={s.notifications} onChange={async (v) => { if (v) { const p = await requestNotifyPermission(); if (p !== 'granted') { toast(`Browser ${p === 'unsupported' ? 'does not support' : 'blocked'} notifications`, 'warning'); return; } } updateSettings({ notifications: v }); }} /></Row>
@@ -44,6 +46,9 @@ export function SettingsPage() {
           <div className="seg">{(['demo', 'live'] as const).map((m) => <button key={m} className={s.agent === m ? 'on' : ''} onClick={() => updateSettings({ agent: m })}>{m === 'demo' ? 'Demo script' : 'Live model'}</button>)}</div>
         </Row>
         {s.agent === 'live' && <ProviderForm />}
+      </section>
+      <section className="set-section"><h4>Learn</h4>
+        <Row label="Guided tour" sub="A 60-second spotlight walk through the rail, composer, header and dock"><button className="btn sm ghost" onClick={() => startTour()}>Replay tour</button></Row>
       </section>
       <section className="set-section"><h4>Data</h4>
         <Row label="Export current session" sub="JSONL ledger (every event) or Markdown transcript"><button className="btn sm ghost" onClick={() => exportSession(st.activeSessionId, 'jsonl')}>JSONL</button><button className="btn sm ghost" onClick={() => exportSession(st.activeSessionId, 'md')}>Markdown</button></Row>
