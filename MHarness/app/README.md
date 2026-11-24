@@ -4,21 +4,33 @@ Working MVP of the design in [`../../MHarness-design`](../../MHarness-design/REA
 
 ## Run it
 
-```powershell
-cd MHarness/app
-pnpm install            # hoisted linker is configured in pnpm-workspace.yaml
+Works on Windows, macOS and Linux with Node ≥ 18.
+
+```bash
+pnpm install            # hoisted linker + esbuild build approval live in pnpm-workspace.yaml
 pnpm build              # vite build → dist/
-pnpm preview            # zero-dependency static server → http://127.0.0.1:5173
+pnpm serve              # zero-dependency static server + model proxy + offline mock → http://127.0.0.1:5173
 pnpm typecheck          # tsc --noEmit
+pnpm smoke              # boots serve.mjs with the real shell and checks it (same as CI)
 ```
 
-`pnpm dev` (Vite dev server with HMR) also works, but `scripts/serve.mjs` is what hosts the model proxy (`/proxy`), the bootstrap config (`/__mesa/config`) and the offline mock model (`/__mesa/mock`). In sandboxed shells Vite's build needs esbuild to spawn a child process; run the build with wider permissions once, then serve `dist/` with `node scripts/serve.mjs`.
+`pnpm dev` (Vite dev server with HMR) also works, but `scripts/serve.mjs` is what hosts the model proxy (`/proxy`), the bootstrap config (`/__mesa/config`), the real shell (`/__mesa/run`, opt-in) and the offline mock model (`/__mesa/mock`). In sandboxed shells Vite's build needs esbuild to spawn a child process; run the build with wider permissions once, then serve `dist/` with `pnpm serve`.
 
 ## Configuration
 
-- `mesa.config.json` (git-ignored) — first-run provider + agent mode, served to the app on boot.
+- `mesa.config.json` (git-ignored) — first-run provider, agent mode and `"shell": true` for the real shell, served to the app on launch.
+- `MESA_SHELL=1` — enable the real shell without touching the config file.
 - `PROXY_ALLOW=host1,host2` — extra hosts for the model proxy allow-list.
-- `PORT` — static server port (default 5173).
+- `PORT` — server port (default 5173).
+
+## Platforms
+
+| | Windows | macOS / Linux |
+|---|---|---|
+| Real shell | `cmd.exe /d /s /c`, verbatim quoting, `ls`/`cat`/`pwd`/`clear`/`which` aliases | `$SHELL -c` (bash, zsh, fish…) |
+| Workspace boundary | case-insensitive prefix check | case-insensitive on macOS, exact on Linux |
+| Shortcuts | Ctrl / Alt labels | ⌘ / ⌥ labels; chords are matched by physical key (`e.code`) so Option+A does not type "å" |
+| Terminals | xterm.js tabs; simulated shell for user terminals (identical on every OS) | same |
 
 ## What is implemented
 

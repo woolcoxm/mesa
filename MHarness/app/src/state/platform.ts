@@ -4,10 +4,13 @@ export const IS_WINDOWS = typeof navigator !== 'undefined' && /Win/.test(navigat
 
 export const MOD = IS_MAC ? '⌘' : 'Ctrl';
 export const ALT = IS_MAC ? '⌥' : 'Alt';
+/** Secondary chords (Ctrl+Shift+X) use the Control key on macOS so they don't collide with browser shortcuts like ⌘⇧J. */
+export const SEC = IS_MAC ? '⌃' : 'Ctrl';
 
-/** Render a shortcut string for this platform: sc('Ctrl+Shift+G') → '⌘⇧G' on macOS, unchanged elsewhere. */
+/** Render a shortcut string for this platform: sc('Ctrl+Shift+G') → '⌃⇧G' on macOS, unchanged elsewhere. */
 export function sc(keys: string): string {
   if (!IS_MAC) return keys;
+  if (/^Ctrl\+Shift/.test(keys)) return keys.replace(/Ctrl\+?/, '⌃').replace(/Shift\+?/, '⇧').replace(/Alt\+?/, '⌥');
   return keys.replace(/Ctrl\+?/g, '⌘').replace(/Shift\+?/g, '⇧').replace(/Alt\+?/g, '⌥');
 }
 

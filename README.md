@@ -2,6 +2,8 @@
 
 **A visual harness for LLM agents — the agent reads, writes, runs and *shows*; you steer, approve, inspect and launch.**
 
+[![CI](https://github.com/woolcoxm/mesa/actions/workflows/ci.yml/badge.svg)](https://github.com/woolcoxm/mesa/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-4f5bd9.svg)](LICENSE) ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-1f9d63)
+
 Mesa is a single window where a person and an LLM agent co-work. The conversation streams in the center; everything the agent produces lands on the right as an **artifact** you can open, run, compare and pin. When a turn finishes with deliverables, a **Completion Showcase** slides in with a hero card per artifact and one-click **Verify** (diff · preview · tests) — because the agent may be wrong, verification is never more than a click away.
 
 ![Completion showcase](docs/screenshots/03-showcase.png)
