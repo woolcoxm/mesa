@@ -134,6 +134,10 @@ await page.setViewportSize({ width: 1920, height: 1000 }); await page.waitForTim
 await page.locator('.session-row', { hasText: 'Analyse revenue' }).first().click(); await page.keyboard.press('Control+1'); await page.waitForTimeout(500);
 await page.locator('.acard .chip-btn:has-text("Beside")').first().click(); await page.waitForTimeout(900);
 await shot('19-canvas-beside');
+await page.locator('.canvas-head .icon-btn[title^="Close"]').click(); await page.waitForTimeout(400);
+// 22 — notebook beside chat (the revenue session's notebook deliverable)
+await page.locator('.acard').filter({ has: page.locator('.acard-title', { hasText: /ipynb$/ }) }).locator('.chip-btn:has-text("Beside")').click(); await page.waitForTimeout(900);
+await shot('22-notebook-beside');
 await page.locator('.canvas-head .icon-btn[title^="Close"]').click();
 await page.setViewportSize({ width: 1440, height: 900 }); await page.waitForTimeout(400);
 

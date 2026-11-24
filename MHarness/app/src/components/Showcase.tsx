@@ -4,6 +4,7 @@ import { dismissShowcase, minimiseShowcase, openBesideChat, openPublish, pinArti
 import type { Artifact, Session, Turn } from '../state/types';
 import { useStore } from '../state/useStore';
 import { kindMeta, HtmlThumb } from './Dock';
+import { notebookThumb } from './NotebookView';
 import { Markdown } from './Markdown';
 
 export function Showcase() {
@@ -48,7 +49,7 @@ function ShowcaseCard({ a, session, i }: { a: Artifact; session: Session; i: num
   return (
     <div className="sc-card" style={{ animationDelay: `${i * 60}ms` }}>
       <div className="sc-thumb">
-        {a.kind === 'app' || a.kind === 'html' ? <div className="thumb-live"><HtmlThumb html={a.html ?? ''} scale={0.62} /></div> : a.kind === 'chart' && a.chart ? <MiniChart a={a} /> : a.code ? <pre className="thumb-code">{a.code.split('\n').slice(0, 8).join('\n')}</pre> : <div className="thumb-blank" />}
+        {a.kind === 'app' || a.kind === 'html' ? <div className="thumb-live"><HtmlThumb html={a.html ?? ''} scale={0.62} /></div> : a.kind === 'chart' && a.chart ? <MiniChart a={a} /> : a.notebook ? <pre className="thumb-code">{notebookThumb(a.notebook)}</pre> : a.code ? <pre className="thumb-code">{a.code.split('\n').slice(0, 8).join('\n')}</pre> : <div className="thumb-blank" />}
         <span className={'kind-badge ' + meta.cls}>{meta.label}</span>
       </div>
       <div className="sc-body">
@@ -62,7 +63,7 @@ function ShowcaseCard({ a, session, i }: { a: Artifact; session: Session; i: num
         </div>
         <div className="sc-actions">
           <button className="btn sm primary" onClick={() => setDockTab(a.kind === 'code' ? 'files' : 'preview')}>Open</button>
-          {(a.html || a.kind === 'chart') && <button className="btn sm ghost" title="Show it live beside the conversation" onClick={() => { openBesideChat(session.id, a.id); dismissShowcase(); }}>⫶ Beside chat</button>}
+          {(a.html || a.kind === 'chart' || a.notebook) && <button className="btn sm ghost" title="Show it live beside the conversation" onClick={() => { openBesideChat(session.id, a.id); dismissShowcase(); }}>⫶ Beside chat</button>}
           {a.added !== undefined && <button className="btn sm ghost" onClick={() => setDockTab('files')}><GitCompare size={12} />Compare</button>}
           {(a.kind === 'app' || a.kind === 'chart') && <button className="btn sm ghost" onClick={() => { setDockTab('preview'); toast(`Re-running ${a.title} with the same inputs`, 'info'); }}><Play size={12} />{a.kind === 'chart' ? 'Re-run' : 'Run'}</button>}
           <button className="icon-btn sm" title="Share / publish" onClick={() => a.html ? openPublish(session.id, a.id) : toast('Publishing is for HTML artifacts — use Pin to keep this one in the Gallery', 'info')}><Share2 size={13} /></button>

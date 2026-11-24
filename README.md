@@ -45,7 +45,9 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Guided tour](docs/screenshots/18-tour.png) | ![Accent colours](docs/screenshots/17-accent-rose.png) |
 | **Guided tour** — an animated spotlight walks through the shell on first run; replay from Settings or the palette. | **Accent colours** — six palettes re-tint buttons, cursors, charts and the showcase in both themes. |
 | ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | ![Publish with preflight](docs/screenshots/21-publish.png) |
-| **Canvas beside chat** — "Beside chat" on any app or chart deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | **Publish with preflight** — Share on an HTML deliverable scans it first (private keys, `sk-…`/AWS/GitHub/Stripe tokens, hard-coded secrets, source maps, untrusted external scripts, localhost links), refuses anything with a blocking finding, and otherwise serves it from your Mesa server at a copyable link you can open or remove. |
+| **Canvas beside chat** — "Beside chat" on any app, chart or notebook deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | **Publish with preflight** — Share on an HTML deliverable scans it first (private keys, `sk-…`/AWS/GitHub/Stripe tokens, hard-coded secrets, source maps, untrusted external scripts, localhost links), refuses anything with a blocking finding, and otherwise serves it from your Mesa server at a copyable link you can open or remove. |
+| ![Notebook beside chat](docs/screenshots/22-notebook-beside.png) | ![Real shell approval](docs/screenshots/15-real-shell-approval.png) |
+| **Notebook renderer** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (text, images, HTML in a sandboxed frame); "Convert to script" downloads the code cells. | **Real shell for live agents** — an agent's `bash` call runs for real on the machine hosting Mesa (`cmd.exe` on Windows, `$SHELL` elsewhere), confined to the repo and always behind the approval takeover. |
 
 > Every screenshot above is regenerated from a deterministic demo run with `pnpm shots` (headless Chromium), so the pictures always match the current build.
 
@@ -156,7 +158,7 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Roadmap
 
-Tracked as GitHub issues. Shipped so far: real shell for live agents (#7), guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), cross-platform CI with a real-shell smoke test. Still planned: SQLite persistence + full-text search (#1), notebook and canvas renderers (#3), ACP bridge for external agents (#5), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), and cross-platform CI with a real-shell smoke test. Still planned: SQLite + FTS5 for large histories (#1), notebook cell execution against a kernel (#8), ACP bridge for external agents (#5), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## License
 

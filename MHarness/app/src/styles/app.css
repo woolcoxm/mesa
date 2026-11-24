@@ -773,3 +773,22 @@ a.chip-btn { text-decoration: none; }
 .turn-actions { display: flex; align-items: center; gap: 6px; margin-top: 6px; opacity: 0; transition: opacity var(--mesa-m-base); }
 .turn:hover .turn-actions, .turn-actions:focus-within { opacity: 1; }
 .turn-meta { font-size: 10.5px; color: var(--mesa-text-muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+/* ---------- notebook renderer ---------- */
+.nb-wrap { flex: 1; min-height: 0; overflow: auto; background: var(--mesa-bg-surface); }
+.notebook { display: flex; flex-direction: column; min-height: 100%; }
+.nb-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--mesa-border-subtle); position: sticky; top: 0; background: var(--mesa-bg-surface); z-index: 1; }
+.nb-cells { padding: 10px 12px 20px; display: flex; flex-direction: column; gap: 8px; }
+.nb-cell { display: grid; grid-template-columns: 56px 1fr; border: 1px solid var(--mesa-border-subtle); border-radius: var(--mesa-r-md); background: var(--mesa-bg-surface); overflow: hidden; animation: rise var(--mesa-m-base) var(--mesa-e-out) both; }
+.nb-cell.markdown { border-style: dashed; }
+.nb-gutter { display: flex; justify-content: flex-end; padding: 10px 8px; border-right: 1px solid var(--mesa-border-subtle); background: var(--mesa-bg-sunken); color: var(--mesa-text-muted); font-family: var(--mesa-type-mono); font-size: 10.5px; }
+.nb-count { white-space: pre; text-align: right; }
+.nb-main { min-width: 0; }
+.nb-source { margin: 0; padding: 10px 12px; font-family: var(--mesa-type-mono); font-size: 12px; line-height: 1.55; white-space: pre-wrap; color: var(--mesa-text-primary); }
+.nb-md { padding: 6px 12px; font-size: 13px; }
+.nb-output { border-top: 1px solid var(--mesa-border-subtle); padding: 8px 12px; background: var(--mesa-bg-sunken); }
+.nb-output pre { margin: 0; font-family: var(--mesa-type-mono); font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; color: var(--mesa-text-secondary); }
+.nb-output.error pre { color: var(--mesa-danger); }
+.nb-output img { max-width: 100%; }
+.nb-html { width: 100%; height: 130px; border: 0; background: transparent; }
+.nb-toolbar > span { white-space: nowrap; flex-shrink: 0; }
+.nb-toolbar .spacer { flex-shrink: 1; }

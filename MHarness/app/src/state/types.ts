@@ -69,6 +69,7 @@ export interface Artifact {
   code?: string;
   html?: string;
   chart?: ChartSpec;
+  notebook?: NotebookSpec;
   framework?: string;
   inputs?: Record<string, unknown>;
   verification?: { tests?: 'pass' | 'fail' | 'unknown'; preview?: 'ready' | 'error' | 'none'; diff?: boolean };
@@ -77,6 +78,7 @@ export interface Artifact {
   tags?: string[];
 }
 
+export interface NotebookSpec { kernel?: string; language?: string; cells: { kind: 'code' | 'markdown'; source: string; execution_count?: number; outputs?: { type: 'text' | 'html' | 'image' | 'error'; value: string }[] }[] }
 export interface ChartSpec { title: string; labels: string[]; values: number[]; series?: string; color?: string }
 
 export interface Run {

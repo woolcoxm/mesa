@@ -6,6 +6,7 @@ import { CHART_HTML } from '../agent/scenarios';
 import { focusCall, openBesideChat, openPublish, pinArtifact, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
 import type { Artifact, ArtifactKind, DiffInfo, Session, TLEvent, ToolCall } from '../state/types';
 import { AdhocBanner, Markdown } from './Markdown';
+import { NotebookView, notebookThumb } from './NotebookView';
 import { clearAdhocPreview } from '../state/store';
 import { useStore } from '../state/useStore';
 import { DiffChip } from './Thread';
@@ -58,7 +59,7 @@ export function ArtifactCard({ a, session, hero }: { a: Artifact; session: Sessi
       <div className="acard-actions" onClick={(e) => e.stopPropagation()} onMouseEnter={() => { if (peekTimer.current) clearTimeout(peekTimer.current); setPeek(null); }}>
         <button className="chip-btn" onClick={open}>Open</button>
         {(a.kind === 'app' || a.kind === 'chart' || a.kind === 'code') && <button className="chip-btn" onClick={() => { setDockTab('preview'); toast(`Running ${a.title}`, 'info'); }}><Play size={11} />Run</button>}
-        {(a.html || a.kind === 'chart') && <button className="chip-btn" title="Show live beside the conversation" onClick={() => openBesideChat(session.id, a.id)}>⫶ Beside</button>}
+        {(a.html || a.kind === 'chart' || a.notebook) && <button className="chip-btn" title="Show live beside the conversation" onClick={() => openBesideChat(session.id, a.id)}>⫶ Beside</button>}
         {a.added !== undefined && <button className="chip-btn" onClick={() => setDockTab('files')}><GitCompare size={11} />Compare</button>}
         <button className="chip-btn" title="Share / publish" onClick={() => a.html ? openPublish(session.id, a.id) : toast('Publishing is for HTML artifacts — use Pin to keep this one in the Gallery', 'info')}><Share2 size={11} /></button>
         <button className={'chip-btn' + (a.pinned ? ' on' : '')} onClick={() => pinArtifact(session.id, a.id)} title="Pin to Gallery">{a.pinned ? <PinOff size={11} /> : <Pin size={11} />}</button>
@@ -79,6 +80,7 @@ function Thumb({ a, hero }: { a: Artifact; hero?: boolean }) {
     const max = Math.max(...a.chart.values);
     return <div className="thumb-chart"><div className="tc-title">{a.chart.title}</div><div className="tc-bars">{a.chart.values.map((v, i) => <div key={i} className="tc-b" style={{ height: `${(v / max) * 100}%`, animationDelay: `${i * 50}ms` }} />)}</div></div>;
   }
+  if (a.notebook) return <pre className="thumb-code">{notebookThumb(a.notebook)}</pre>;
   if (a.code) return <pre className="thumb-code">{a.code.split('\n').slice(0, hero ? 10 : 6).join('\n')}</pre>;
   return <div className="thumb-blank"><FileText size={20} /></div>;
 }
@@ -227,14 +229,15 @@ export function ChartView({ a }: { a: Artifact }) {
 export function PreviewTab({ session }: { session: Session }) {
   const app = [...session.artifacts].reverse().find((a) => a.kind === 'app' || a.kind === 'html');
   const chart = [...session.artifacts].reverse().find((a) => a.kind === 'chart');
+  const notebook = [...session.artifacts].reverse().find((a) => a.kind === 'notebook' && a.notebook);
   const doc = [...session.artifacts].reverse().find((a) => a.kind === 'markdown' || a.kind === 'table' || a.kind === 'code');
   const [device, setDevice] = useState(0);
   const [panel, setPanel] = useState<'console' | 'network' | 'none'>('none');
-  const [mode, setMode] = useState<'app' | 'chart' | 'doc'>(app ? 'app' : chart ? 'chart' : 'doc');
+  const [mode, setMode] = useState<'app' | 'chart' | 'doc' | 'nb'>(app ? 'app' : chart ? 'chart' : notebook ? 'nb' : 'doc');
   const adhoc = useStore().adhoc;
   const sizes = [{ w: 0, h: 0, l: 'Fit' }, { w: 390, h: 844, l: 'Phone' }, { w: 768, h: 1024, l: 'Tablet' }, { w: 1440, h: 900, l: 'Desktop' }];
   const s = sizes[device];
-  const show = adhoc ? ({ kind: 'app', title: adhoc.title, html: adhoc.html, path: 'from chat' } as unknown as Artifact) : mode === 'app' ? app || chart : mode === 'chart' ? chart : doc;
+  const show = adhoc ? ({ kind: 'app', title: adhoc.title, html: adhoc.html, path: 'from chat' } as unknown as Artifact) : mode === 'app' ? app || chart : mode === 'chart' ? chart : mode === 'nb' ? notebook : doc;
   const lang = show?.kind === 'markdown' ? 'md' : show?.kind === 'table' ? 'json' : 'ts';
   const docText = show && show.code ? FENCE + lang + '\n' + show.code + '\n' + FENCE : '';
   const run = session.runs.find((r) => r.port);
@@ -242,7 +245,7 @@ export function PreviewTab({ session }: { session: Session }) {
     <div className="preview-tab">
       {adhoc && <AdhocBanner title={adhoc.title} onClose={clearAdhocPreview} />}
       <div className="preview-bar">
-        <div className="seg">{(['app', 'chart', 'doc'] as const).filter((m) => m === 'app' ? !!(app || chart) : m === 'chart' ? !!chart : !!doc).map((m) => <button key={m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>{m === 'app' ? 'App' : m === 'chart' ? 'Chart' : 'Doc'}</button>)}</div>
+        <div className="seg">{(['app', 'chart', 'nb', 'doc'] as const).filter((m) => m === 'app' ? !!(app || chart) : m === 'chart' ? !!chart : m === 'nb' ? !!notebook : !!doc).map((m) => <button key={m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>{m === 'app' ? 'App' : m === 'chart' ? 'Chart' : m === 'nb' ? 'Notebook' : 'Doc'}</button>)}</div>
         <div className="url">{run?.port ? `http://localhost:${run.port}` : show?.path ?? '—'}</div>
         <span className="spacer" />
         <div className="seg devices">{sizes.map((d, i) => <button key={d.l} className={device === i ? 'on' : ''} onClick={() => setDevice(i)} title={`${d.w}×${d.h}`}>{d.l}</button>)}</div>
@@ -254,7 +257,7 @@ export function PreviewTab({ session }: { session: Session }) {
       <div className="preview-stage">
         <div className="device" style={device === 0 ? { width: '100%', height: '100%' } : { width: s.w, height: s.h }}>
           {show ? (
-            show.kind === 'chart' ? <ChartView a={show} /> : show.kind === 'app' || show.kind === 'html' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={show.html ?? ''} /> : show.code ? <div className="doc-view"><Markdown text={docText} /></div> : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." />
+            show.kind === 'chart' ? <ChartView a={show} /> : show.kind === 'notebook' && show.notebook ? <div className="nb-wrap"><NotebookView artifact={show} /></div> : show.kind === 'app' || show.kind === 'html' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={show.html ?? ''} /> : show.code ? <div className="doc-view"><Markdown text={docText} /></div> : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." />
           ) : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." />}
         </div>
       </div>

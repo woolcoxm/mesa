@@ -3,6 +3,7 @@ import { closeCanvas, setCanvasSplit, setDockTab, pinArtifact } from '../state/s
 import type { Artifact, Session } from '../state/types';
 import { ChartView, EmptyTab, HtmlThumb, kindMeta } from './Dock';
 import { Markdown } from './Markdown';
+import { NotebookView } from './NotebookView';
 
 /** Resizable pane beside the thread showing one artifact live (the design brief's "canvas beside chat"). */
 export function CanvasPane({ session, artifact, width }: { session: Session; artifact: Artifact; width: number }) {
@@ -32,6 +33,7 @@ export function CanvasPane({ session, artifact, width }: { session: Session; art
       <div className="canvas-body">
         {artifact.html ? <iframe title={artifact.title} sandbox="allow-scripts" srcDoc={artifact.html} />
           : artifact.kind === 'chart' && artifact.chart ? <ChartView a={artifact} />
+          : artifact.notebook ? <div className="nb-wrap"><NotebookView artifact={artifact} /></div>
           : artifact.code ? <div className="doc-view"><Markdown text={docText} /></div>
           : <EmptyTab icon={<span style={{ fontSize: 18 }}>✦</span>} text="Nothing to render" sub="This artifact has no preview." />}
       </div>
