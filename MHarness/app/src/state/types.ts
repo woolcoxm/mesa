@@ -166,7 +166,7 @@ export interface Settings {
   autoComplete: boolean;
   sidebarWidth: number;
   dockWidth: number;
-  agent: 'demo' | 'live';
+  agent: 'demo' | 'live' | 'acp';
   shell: boolean;
   accent: string;
   tourDone: boolean;

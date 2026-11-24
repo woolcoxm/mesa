@@ -19,7 +19,7 @@ pnpm shots              # regenerates every README screenshot (needs `npx playwr
 
 ## Configuration
 
-- `mesa.config.json` (git-ignored) — first-run provider, agent mode and `"shell": true` for the real shell, served to the app on launch.
+- `mesa.config.json` (git-ignored) — first-run provider, agent mode, `"shell": true` for the real shell, and `"acp": { "command": "...", "args": ["..."] }` for an external ACP agent (only the server can spawn it; the page attaches and prompts), served to the app on launch.
 - `MESA_SHELL=1` — enable the real shell without touching the config file.
 - `PROXY_ALLOW=host1,host2` — extra hosts for the model proxy allow-list.
 - `PORT` — server port (default 5173).

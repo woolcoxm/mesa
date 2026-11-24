@@ -34,6 +34,13 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/__mesa/published') return listPublished(res);
   if (url.pathname === '/__mesa/state' && req.method === 'GET') return getStateFile(res);
   if (url.pathname === '/__mesa/state' && req.method === 'PUT') return putStateFile(req, res);
+  // ACP bridge (Agent Client Protocol over stdio) — the agent command comes from mesa.config.json only; the page can never spawn arbitrary processes.
+  if (url.pathname === '/__mesa/acp/status') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); return res.end(JSON.stringify({ configured: !!bootConfig.acp?.command, command: bootConfig.acp ? [bootConfig.acp.command, ...(bootConfig.acp.args ?? [])].join(' ') : null })); }
+  if (url.pathname === '/__mesa/acp/attach' && req.method === 'POST') return acpAttach(req, res);
+  if (url.pathname === '/__mesa/acp/prompt' && req.method === 'POST') return acpPrompt(req, res);
+  if (url.pathname === '/__mesa/acp/cancel' && req.method === 'POST') return acpCancel(req, res);
+  if (url.pathname === '/__mesa/acp/permission' && req.method === 'POST') return acpPermission(req, res);
+  if (url.pathname === '/__mesa/acp/events') return acpEvents(req, res, url);
   if (url.pathname.startsWith('/__mesa/publish/') && req.method === 'DELETE') return unpublish(url, res);
   if (url.pathname === '/__mesa/config') {
     // Local-only bootstrap config (mesa.config.json next to package.json). Served only to this origin.
@@ -170,6 +177,90 @@ async function putStateFile(req, res) {
   try { JSON.parse(text); } catch { res.writeHead(400); return res.end('bad json'); }
   await writeFile(stateFile, text);
   res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, bytes: text.length }));
+}
+
+// ---------- ACP bridge: Agent Client Protocol (JSON-RPC 2.0, newline-delimited) over the agent's stdio ----------
+import readline from 'node:readline';
+const agents = new Map(); // mesaSessionId → { proc, agentSessionId, nextId, pending, clients, initialised }
+function acpJson(res, code, body) { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
+async function readJsonBody(req) { const chunks = []; for await (const c of req) chunks.push(c); try { return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); } catch { return null; } }
+function acpEmit(entry, event) { for (const res of entry.clients) { if (!res.writableEnded) res.write(`data: ${JSON.stringify(event)}\n\n`); } }
+function acpSend(entry, method, params) {
+  const id = entry.nextId++;
+  return new Promise((resolve, reject) => {
+    entry.pending.set(id, { resolve, reject });
+    entry.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
+    setTimeout(() => { if (entry.pending.has(id)) { entry.pending.delete(id); reject(new Error(`${method} timed out`)); } }, 30_000);
+  });
+}
+async function acpStart(mesaSessionId) {
+  const cfg = bootConfig.acp; if (!cfg?.command) throw new Error('ACP is not configured on this server (set "acp": { "command": "...", "args": [...] } in mesa.config.json)');
+  let entry = agents.get(mesaSessionId);
+  if (entry && entry.proc.exitCode === null && entry.initialised) return entry;
+  entry = { proc: null, agentSessionId: null, nextId: 1, pending: new Map(), clients: new Set(), initialised: false, permissionOptions: new Map() };
+  agents.set(mesaSessionId, entry);
+  entry.proc = spawn(cfg.command, cfg.args ?? [], { cwd: workspaceRoot, env: { ...process.env, ...(cfg.env ?? {}) }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+  entry.proc.stderr.on('data', (d) => acpEmit(entry, { type: 'stderr', text: String(d).slice(0, 500) }));
+  entry.proc.on('exit', (code) => { acpEmit(entry, { type: 'status', status: 'exited', code }); for (const p of entry.pending.values()) p.reject(new Error('agent exited')); entry.pending.clear(); entry.initialised = false; });
+  const rl = readline.createInterface({ input: entry.proc.stdout });
+  rl.on('line', (line) => {
+    let msg; try { msg = JSON.parse(line); } catch { return; }
+    // Response to one of our requests
+    if (msg.id !== undefined && entry.pending.has(msg.id)) { const p = entry.pending.get(msg.id); entry.pending.delete(msg.id); if (msg.error) p.reject(new Error(msg.error.message ?? 'agent error')); else p.resolve(msg.result); return; }
+    // Notification from the agent
+    if (msg.method === 'session/update') {
+      const u = msg.params?.update ?? {}; const text = u.content?.text ?? (Array.isArray(u.content) ? u.content.map((c) => c.content?.text ?? '').join('') : '');
+      if (u.sessionUpdate === 'agent_message_chunk') acpEmit(entry, { type: 'chunk', text });
+      else if (u.sessionUpdate === 'agent_thought_chunk') acpEmit(entry, { type: 'thought', text });
+      else if (u.sessionUpdate === 'tool_call') acpEmit(entry, { type: 'tool', toolCallId: u.toolCallId, title: u.title, kind: u.kind, status: u.status ?? 'pending' });
+      else if (u.sessionUpdate === 'tool_call_update') acpEmit(entry, { type: 'tool_update', toolCallId: u.toolCallId, status: u.status, text: Array.isArray(u.content) ? u.content.map((c) => c.content?.text ?? '').join('\n') : '' });
+      else if (u.sessionUpdate === 'plan') acpEmit(entry, { type: 'plan', entries: u.entries ?? [] });
+      return;
+    }
+    // Request from the agent: permission
+    if (msg.method === 'session/request_permission') {
+      const options = (msg.params?.options ?? []).map((o) => ({ optionId: o.optionId, name: o.name, kind: o.kind }));
+      entry.permissionOptions.set(String(msg.id), options);
+      acpEmit(entry, { type: 'permission', requestId: String(msg.id), toolCallId: msg.params?.toolCall?.toolCallId, title: msg.params?.toolCall?.title ?? 'Permission', command: msg.params?.toolCall?.rawInput?.command ?? '', options });
+      return;
+    }
+    if (msg.id !== undefined) entry.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: {} }) + '\n'); // unsupported requests get an empty ok
+  });
+  await acpSend(entry, 'initialize', { protocolVersion: 1, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false } });
+  entry.initialised = true;
+  const s = await acpSend(entry, 'session/new', { cwd: workspaceRoot, mcpServers: [] });
+  entry.agentSessionId = s?.sessionId;
+  acpEmit(entry, { type: 'status', status: 'attached' });
+  return entry;
+}
+async function acpAttach(req, res) { const b = await readJsonBody(req); if (!b?.mesaSessionId) return acpJson(res, 400, { error: 'mesaSessionId required' }); try { const e = await acpStart(b.mesaSessionId); acpJson(res, 200, { ok: true, agentSessionId: e.agentSessionId }); } catch (e) { acpJson(res, 500, { error: e.message }); } }
+async function acpPrompt(req, res) {
+  const b = await readJsonBody(req); if (!b?.mesaSessionId || typeof b.text !== 'string') return acpJson(res, 400, { error: 'mesaSessionId and text required' });
+  let entry; try { entry = await acpStart(b.mesaSessionId); } catch (e) { return acpJson(res, 500, { error: e.message }); }
+  if (!entry.agentSessionId) return acpJson(res, 500, { error: 'agent has no session' });
+  acpEmit(entry, { type: 'status', status: 'running' });
+  acpSend(entry, 'session/prompt', { sessionId: entry.agentSessionId, prompt: [{ type: 'text', text: b.text }] })
+    .then((r) => acpEmit(entry, { type: 'done', stopReason: r?.stopReason ?? 'end_turn' }))
+    .catch((e) => acpEmit(entry, { type: 'error', message: e.message }));
+  acpJson(res, 200, { ok: true });
+}
+async function acpCancel(req, res) { const b = await readJsonBody(req); const entry = agents.get(b?.mesaSessionId); if (entry?.agentSessionId && entry.proc.exitCode === null) { try { await acpSend(entry, 'session/cancel', { sessionId: entry.agentSessionId }); } catch { /* ignore */ } } acpJson(res, 200, { ok: true }); }
+async function acpPermission(req, res) {
+  const b = await readJsonBody(req); const entry = agents.get(b?.mesaSessionId);
+  if (!entry || !b?.requestId) return acpJson(res, 404, { error: 'no such agent/request' });
+  const options = entry.permissionOptions.get(String(b.requestId)) ?? [];
+  const optionId = options.some((o) => o.optionId === b.optionId) ? b.optionId : (options.find((o) => /reject/.test(o.kind))?.optionId ?? options[0]?.optionId);
+  entry.permissionOptions.delete(String(b.requestId));
+  if (entry.proc.exitCode === null) entry.proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: b.requestId, result: { outcome: { outcome: 'selected', optionId } } }) + '\n');
+  acpJson(res, 200, { ok: true, optionId });
+}
+function acpEvents(req, res, url) {
+  const id = url.searchParams.get('session'); const entry = agents.get(id);
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+  res.write(`data: ${JSON.stringify({ type: 'hello', attached: !!entry?.initialised })}\n\n`);
+  if (!entry) { res.end(); return; }
+  entry.clients.add(res);
+  req.on('close', () => entry.clients.delete(res));
 }
 
 async function proxy(req, res, url) {

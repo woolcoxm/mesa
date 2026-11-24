@@ -4,6 +4,7 @@ import type {
 } from './types';
 import { pickScenario, SEED_PLAN, type ArtifactSeed, type SceneStep, type Scenario } from '../agent/scenarios';
 import { estimateCostUsd, extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
+import { acpCancel, runAcpPrompt } from '../agent/acp';
 
 export const uid = (): Id => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -243,6 +244,54 @@ export function openPublish(sessionId: Id, artifactId: Id) { state = { ...state,
 export function closePublish() { state = { ...state, publish: null }; emit(); }
 export function setTour(step: number | null) { state = { ...state, tour: step }; emit(); }
 export function isLiveAgent() { const p = state.settings.provider; return state.settings.agent === 'live' && !!p?.baseUrl && (!!p.apiKey || p.preset === 'mock'); }
+export function isAcpAgent() { return state.settings.agent === 'acp'; }
+
+/** One turn driven by an external ACP agent (see agent/acp.ts); the agent process is owned by scripts/serve.mjs. */
+export async function runAcpTurn(sessionId: Id, turnId: Id) {
+  const s0 = state.sessions.find((x) => x.id === sessionId); if (!s0) return;
+  const turn = s0.turns.find((t) => t.id === turnId); if (!turn) return;
+  if (s0.model !== 'acp') updateSession(sessionId, (s) => { s.model = 'acp'; });
+  const started = Date.now();
+  const token = { cancelled: false };
+  updateSession(sessionId, (s) => { s.state = 'running'; s.cancel = () => { token.cancelled = true; acpCancel(sessionId); }; });
+  const blockId = uid();
+  updateTurn(sessionId, turnId, (t) => { t.blocks.push({ id: blockId, type: 'text', text: '', streaming: true }); });
+  pushTimeline(sessionId, { label: 'acp · session/prompt', kind: 'tool', callId: turnId });
+  let textAll = '';
+  await runAcpPrompt(sessionId, turn.user, {
+    appendText: (text) => { textAll += text; updateBlock(sessionId, turnId, blockId, (b) => { if (b.type === 'text') b.text += text; }); },
+    appendThought: (text) => updateTurn(sessionId, turnId, (t) => { t.thinking = ((t.thinking ?? '') + text).slice(-600); }),
+    addTool: (call) => updateTurn(sessionId, turnId, (t) => { t.blocks.push({ id: uid(), type: 'tool', call }); }),
+    updateTool: (callId, patch) => updateTurn(sessionId, turnId, (t) => { t.blocks = t.blocks.map((b) => (b.type === 'tool' && b.call.id === callId ? { ...b, call: { ...b.call, ...patch } } : b)); }),
+    requestPermission: async ({ callId, title, command, options }) => {
+      // Locate the tool row for this call (created by the preceding tool event) or add one.
+      let blockIdForCall: Id | undefined;
+      updateTurn(sessionId, turnId, (t) => { const b = t.blocks.find((x) => x.type === 'tool' && x.call.id === callId); if (b) blockIdForCall = b.id; else { const nb = uid(); t.blocks.push({ id: nb, type: 'tool', call: { id: callId, name: 'tool', title, subtitle: 'acp', status: 'running', startedAt: Date.now(), runtime: 'host' } }); blockIdForCall = nb; } });
+      const option = (re: RegExp) => options.find((o) => re.test(o.kind))?.optionId;
+      const decision = await requestApproval(sessionId, turnId, blockIdForCall!, callId, { kind: 'shell', title: title || 'Agent permission request', detail: command || title, flags: [], risk: { level: 'medium', rationale: 'Requested by the ACP agent.' } }, false);
+      updateCall(sessionId, turnId, blockIdForCall!, (c) => { c.decision = decision; });
+      if (decision.action === 'deny') return { optionId: option(/reject/) ?? options[0]?.optionId ?? 'reject' };
+      if (decision.action === 'allow-always') return { optionId: option(/allow_always/) ?? option(/allow/) ?? options[0]?.optionId ?? 'allow' };
+      return { optionId: option(/allow_once/) ?? option(/allow/) ?? options[0]?.optionId ?? 'allow' };
+    },
+    finish: (r) => {
+      updateBlock(sessionId, turnId, blockId, (b) => { if (b.type === 'text') { b.streaming = false; if (r.error) b.text += `\n\n> **ACP error** — ${r.error}`; } });
+      if (!textAll && !r.error) updateTurn(sessionId, turnId, (t) => { t.blocks = t.blocks.filter((b) => b.id !== blockId); });
+      const cur = state.sessions.find((x) => x.id === sessionId)?.turns.find((t) => t.id === turnId); if (!cur) return;
+      const cancelled = token.cancelled || r.stopReason === 'cancelled';
+      const toolCount = cur.blocks.filter((b) => b.type === 'tool').length;
+      const usage: Usage = { inputTokens: Math.round(turn.user.length / 4), outputTokens: Math.round(textAll.length / 4), cachedTokens: 0, costUsd: 0, latencyMs: Date.now() - started };
+      updateSession(sessionId, (ss) => {
+        ss.state = 'idle'; ss.cancel = undefined; ss.pendingApproval = undefined;
+        ss.turns = ss.turns.map((t) => (t.id === turnId ? { ...t, status: cancelled ? 'cancelled' : 'done', endedAt: Date.now(), usage, blocks: t.blocks.map((b) => (b.type === 'tool' && b.call.status === 'running' ? { ...b, call: { ...b.call, status: 'error' as const, error: 'Interrupted', endedAt: Date.now() } } : b)) } : t));
+        ss.tokens = Math.min(ss.contextMax, ss.tokens + usage.inputTokens + usage.outputTokens);
+      });
+      pushTimeline(sessionId, { label: cancelled ? 'turn cancelled' : 'turn ended', kind: 'turn', ms: usage.latencyMs });
+      if (toolCount && !cancelled) toast('ACP agent finished', 'success');
+    },
+    cancelToken: () => token,
+  });
+}
 export function focusCall(callId: Id) { state = { ...state, focus: { callId, n: Date.now() } }; emit(); }
 export function openAdhocPreview(title: string, html: string) { state = { ...state, adhoc: { title, html }, dock: { ...state.dock, tab: 'preview', open: true } }; emit(); }
 export function clearAdhocPreview() { state = { ...state, adhoc: null }; emit(); }
@@ -573,7 +622,8 @@ function startTurn(sessionId: Id, text: string) {
   const title = text.length > 42 ? text.slice(0, 42).trimEnd() + '…' : text;
   if (state.sessions.find((x) => x.id === sessionId)?.title === 'New session') updateSession(sessionId, (s) => { s.title = title; });
   pushTimeline(sessionId, { label: `turn · ${title}`, kind: 'turn' });
-  if (isLiveAgent()) runModelTurn(sessionId, turnId);
+  if (isAcpAgent()) runAcpTurn(sessionId, turnId);
+  else if (isLiveAgent()) runModelTurn(sessionId, turnId);
   else runScenario(sessionId, turnId, pickScenario(text));
   return turnId;
 }

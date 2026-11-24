@@ -11,6 +11,8 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Palette commands for accent colours and density; **token sparkline** in Stats; cost estimates marked as estimated or unpriced.
 - **? shortcut cheat sheet** (searchable, respects overrides) and **empty-state calls to action** in every dock tab.
 - Approval scope **allow for this session** (between once and always-for-repo) for live shell commands.
+- **ACP bridge (experimental)** — drive external agents (Claude Code, Codex, Gemini CLI…) over the Agent Client Protocol: streamed messages and thoughts, tool rows, permission requests in the approval takeover, cancel. Ships with a reference agent (`scripts/mock-acp-agent.mjs`).
+- Toasts moved under the header so they can never cover the composer's Stop button.
 
 ## [0.2.0] — 2026-11-24
 

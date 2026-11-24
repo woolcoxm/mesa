@@ -89,6 +89,21 @@ Without it, the app starts in **Demo** mode, which needs no network or keys.
 
 With `"shell": true` (or `MESA_SHELL=1`), a live agent's `bash` tool runs **for real on the machine hosting `serve.mjs`** — `cmd.exe` on Windows (with a small `ls`/`cat`/`pwd` alias table so POSIX-style commands behave), otherwise your `$SHELL` with `-c`. Commands are confined to the repository folder, killed after a timeout, and **always gated by the approval takeover** in the UI. With the shell off, live `bash` calls run in a simulated sandbox instead.
 
+### External agents over ACP (experimental)
+
+![ACP settings](docs/screenshots/26-acp-settings.png) ![An external agent's permission request in the approval takeover](docs/screenshots/27-acp-approval.png)
+
+Settings → **Agent → ACP agent** drives an external coding agent that speaks the [Agent Client Protocol](https://agentclientprotocol.com) (JSON-RPC over stdio) — Claude Code, Codex, Gemini CLI and friends via their ACP adapters. The server owns the process (the page can never spawn one): put the command in `mesa.config.json` and restart `serve.mjs`.
+
+```json
+{
+  "agent": "acp",
+  "acp": { "command": "npx", "args": ["-y", "@zed-industries/claude-code-acp"] }
+}
+```
+
+Mesa performs `initialize` → `session/new` → `session/prompt`, streams `agent_message_chunk` / `agent_thought_chunk` into the thread, turns `tool_call` / `tool_call_update` into tool rows, and shows the agent's `session/request_permission` in the approval takeover — your decision is sent back as the selected option. `Stop` sends `session/cancel`. **Attach & test** in Settings spawns the agent and reports its session id. A reference agent for trying the bridge without any CLI installed ships as `scripts/mock-acp-agent.mjs` (set `"acp": { "command": "node", "args": ["MHarness/app/scripts/mock-acp-agent.mjs"] }`; prompts containing `tool:` exercise a tool call, `perm:` a permission request). Validated against the reference agent; feedback from real adapters is welcome.
+
 ---
 
 ## Connecting a model
@@ -162,7 +177,7 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Roadmap
 
-Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), and cross-platform CI with a real-shell smoke test. Still planned: SQLite + FTS5 for large histories (#1), notebook cell execution against a kernel (#7), ACP bridge for external agents (#5), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Still planned: SQLite + FTS5 for large histories (#1), notebook cell execution against a kernel (#7), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## Changelog & license
 

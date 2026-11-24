@@ -5,7 +5,7 @@ import {
   ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2, RotateCcw,
 } from 'lucide-react';
 import { Markdown } from './Markdown';
-import { insertIntoComposer, isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
+import { insertIntoComposer, isAcpAgent, isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
 import type { Block, DiffInfo, Session, ToolCall, Turn } from '../state/types';
 import { useStore } from '../state/useStore';
 
@@ -66,11 +66,11 @@ const LIVE_SUGGESTIONS: Suggestion[] = [
 ];
 function EmptyThread() {
   const st = useStore();
-  const live = isLiveAgent();
+  const live = isLiveAgent() || isAcpAgent();
   return (
     <div className="empty-thread">
       <div className="hero-mark"><span className="hero-dot" />Mesa</div>
-      <div className="hero-agent">{live ? `live · ${st.settings.provider?.model}${st.settings.provider?.preset === 'strata' ? ' via Strata' : ''}` : 'demo agent · scripted scenarios, no network'}</div>
+      <div className="hero-agent">{isAcpAgent() ? 'acp · external agent over the Agent Client Protocol' : live ? `live · ${st.settings.provider?.model}${st.settings.provider?.preset === 'strata' ? ' via Strata' : ''}` : 'demo agent · scripted scenarios, no network'}</div>
       <h2>Where your agent works in the open.</h2>
       <p>Ask for something that produces a thing — an app, a chart, a fix — and it shows up on the right as a deliverable you can <b>open</b>, <b>run</b>, <b>compare</b> and <b>share</b>.</p>
       <div className="suggest">

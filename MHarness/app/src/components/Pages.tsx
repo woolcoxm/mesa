@@ -3,6 +3,7 @@ import { X, Check, Info, AlertTriangle, OctagonAlert, Sun, Moon, Monitor, Sparkl
 import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings } from '../state/store';
 import { startTour } from './Tour';
 import { ShortcutEditor } from './ShortcutEditor';
+import { acpStatus } from '../agent/acp';
 import { listModels, PROVIDER_PRESETS, shellStatus, testProvider } from '../agent/provider';
 import { ACCENTS, sc, shellName } from '../state/platform';
 import { useStore } from '../state/useStore';
@@ -38,9 +39,10 @@ export function SettingsPage() {
         <ShortcutEditor />
       </section>
       <section className="set-section"><h4>Agent</h4>
-        <Row label="Agent backend" sub="Demo runs scripted scenarios offline; Live streams from an OpenAI-compatible endpoint. HTML fences in answers become previewable artifacts.">
-          <div className="seg">{(['demo', 'live'] as const).map((m) => <button key={m} className={s.agent === m ? 'on' : ''} onClick={() => updateSettings({ agent: m })}>{m === 'demo' ? 'Demo script' : 'Live model'}</button>)}</div>
+        <Row label="Agent backend" sub="Demo runs scripted scenarios offline; Live streams from an OpenAI-compatible endpoint; ACP drives an external agent (Claude Code, Codex, Gemini CLI…) over the Agent Client Protocol. HTML fences in answers become previewable artifacts.">
+          <div className="seg">{(['demo', 'live', 'acp'] as const).map((m) => <button key={m} className={s.agent === m ? 'on' : ''} onClick={() => updateSettings({ agent: m })}>{m === 'demo' ? 'Demo script' : m === 'live' ? 'Live model' : 'ACP agent'}</button>)}</div>
         </Row>
+        {s.agent === 'acp' && <AcpRow />}
         {s.agent === 'live' && <ProviderForm />}
       </section>
       <section className="set-section"><h4>Learn</h4>
@@ -55,6 +57,21 @@ export function SettingsPage() {
         <Row label="Scope memory" sub="“Always allow for this repo” rules"><span className="muted">3 rules · manage</span></Row>
         <Row label="Auto-review tool calls" sub="A second model labels risk before an approval is shown"><Toggle on={true} onChange={() => {}} /></Row>
       </section>
+    </div>
+  );
+}
+
+function AcpRow() {
+  const st = useStore();
+  const [status, setStatus] = useState<{ configured: boolean; command: string | null } | null>(null);
+  const [test, setTest] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [msg, setMsg] = useState('');
+  useEffect(() => { acpStatus().then(setStatus); }, []);
+  const tryAttach = async () => { setTest('testing'); try { const r = await fetch('/__mesa/acp/attach', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mesaSessionId: st.activeSessionId }) }); const j = await r.json().catch(() => ({})); setMsg(j.error ?? `attached as ${j.agentSessionId}`); setTest(r.ok ? 'ok' : 'fail'); } catch (e) { setMsg(String(e)); setTest('fail'); } };
+  return (
+    <div className="provider-form">
+      <div className="set-sub pf-hint">{status === null ? 'Checking server…' : status.configured ? `Server will spawn: ${status.command}. The command lives in mesa.config.json (the page cannot spawn processes itself).` : 'No ACP agent is configured — add "acp": { "command": "...", "args": ["..."] } to mesa.config.json and restart serve.mjs.'}</div>
+      <div className="pf-actions"><span className={'pf-status ' + test}>{test === 'testing' ? 'Attaching…' : test === 'ok' ? `✓ ${msg}` : test === 'fail' ? `✗ ${msg}` : 'Agents speak JSON-RPC over stdio (initialize → session/new → session/prompt); permission requests appear as Mesa approvals.'}</span><button className="btn sm ghost" onClick={tryAttach} disabled={!status?.configured || test === 'testing'}>Attach &amp; test</button></div>
     </div>
   );
 }

@@ -169,6 +169,19 @@ await shot('21-publish');
 await esc();
 
 // leave the workspace in demo mode for whoever opens it next
+// 26/27 — ACP bridge: settings + an external agent's permission request in the takeover
+await settings();
+await page.locator('.set-section:has-text("Agent") .seg button:has-text("ACP agent")').click(); await page.waitForTimeout(500);
+await page.locator('.pf-actions .btn').click(); await page.waitForTimeout(1500);
+await page.locator('.set-section:has-text("Agent") .seg').scrollIntoViewIfNeeded(); await page.waitForTimeout(200);
+await shot('26-acp-settings');
+await back();
+await page.locator('.new-btn').click(); await page.waitForTimeout(200);
+await page.locator('.composer-input').fill('perm: run the echo so Mesa asks for approval'); await page.keyboard.press('Enter');
+await page.waitForSelector('.takeover', { timeout: 15000 });
+await shot('27-acp-approval');
+await page.locator('.tk-actions .btn.primary').click();
+await page.waitForFunction(() => !document.querySelector('.working') && !document.querySelector('.takeover'), null, { timeout: 20000 });
 await settings(); await page.locator('.set-section:has-text("Agent") .seg button:has-text("Demo script")').click(); await page.waitForTimeout(600);
 
 await browser.close();
