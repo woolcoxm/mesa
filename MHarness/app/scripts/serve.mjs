@@ -1,0 +1,112 @@
+// Zero-dependency static server for the built app + a tiny dev proxy for model endpoints (no child processes, sandbox-friendly).
+import http from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Readable } from 'node:stream';
+
+const root = join(fileURLToPath(new URL('.', import.meta.url)), '..', 'dist');
+const port = Number(process.env.PORT || 5173);
+// Only http(s) targets on the allow-list are proxied. Extend with PROXY_ALLOW="host1,host2" (comma-separated hostnames).
+const allow = new Set(['api.z.ai', 'api.openai.com', '10.0.0.169', ...(process.env.PROXY_ALLOW ?? '').split(',').map((s) => s.trim()).filter(Boolean)]);
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2' };
+
+// Optional bootstrap config: mesa.config.json → { provider: {...}, agent: 'live' | 'demo' }.
+let bootConfig = {};
+try { bootConfig = JSON.parse(await readFile(join(root, '..', 'mesa.config.json'), 'utf8')); } catch { /* none */ }
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
+  if (url.pathname === '/proxy') return proxy(req, res, url);
+  if (url.pathname === '/__mesa/allow') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify([...allow])); }
+  if (url.pathname === '/__mesa/config') {
+    // Local-only bootstrap config (mesa.config.json next to package.json). Served only to this origin.
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+    return res.end(JSON.stringify(bootConfig));
+  }
+  if (url.pathname === '/__mesa/mock/models') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ object: 'list', data: [{ id: 'mesa-mock', object: 'model' }] })); }
+  if (url.pathname === '/__mesa/mock/chat/completions') return mockChat(req, res);
+  try {
+    const path = decodeURIComponent(url.pathname);
+    let file = normalize(join(root, path));
+    if (!file.startsWith(root)) { res.writeHead(403); return res.end('forbidden'); }
+    try { if ((await readFile(file)).length >= 0 && extname(file) === '') throw 0; } catch { file = join(root, 'index.html'); }
+    const body = await readFile(file);
+    res.writeHead(200, { 'content-type': types[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+    res.end(body);
+  } catch {
+    res.writeHead(404); res.end('not found');
+  }
+});
+
+async function proxy(req, res, url) {
+  const target = url.searchParams.get('u');
+  if (!target) { res.writeHead(400); return res.end('missing u'); }
+  let t;
+  try { t = new URL(target); } catch { res.writeHead(400); return res.end('bad u'); }
+  if (t.protocol !== 'http:' && t.protocol !== 'https:') { res.writeHead(400); return res.end('bad scheme'); }
+  if (!allow.has(t.hostname)) { res.writeHead(403); return res.end(`host not allowed: ${t.hostname} (add to PROXY_ALLOW)`); }
+  const headers = {};
+  for (const h of ['content-type', 'authorization', 'accept', 'anthropic-version', 'anthropic-beta']) if (req.headers[h]) headers[h] = req.headers[h];
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  const body = chunks.length ? Buffer.concat(chunks) : undefined;
+  try {
+    const upstream = await fetch(t, { method: req.method, headers, body, duplex: body ? 'half' : undefined });
+    const out = {};
+    for (const h of ['content-type', 'cache-control']) if (upstream.headers.get(h)) out[h] = upstream.headers.get(h);
+    res.writeHead(upstream.status, out);
+    if (upstream.body) Readable.fromWeb(upstream.body).pipe(res); else res.end();
+  } catch (e) {
+    res.writeHead(502, { 'content-type': 'text/plain' });
+    res.end(`proxy error: ${e?.message ?? e}`);
+  }
+}
+
+server.listen(port, '127.0.0.1', () => console.log(`mesa preview → http://127.0.0.1:${port}  (proxy allow-list: ${[...allow].join(', ')})`));
+
+// ---------- offline mock model with tool calling (preset "Mesa mock") ----------
+const MOCK_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Glowing Click Counter</title><style>
+body{margin:0;height:100vh;display:grid;place-items:center;background:#0b0d11;color:#e8ebef;font-family:Inter,system-ui}
+button{padding:18px 30px;font-size:18px;border:0;border-radius:14px;background:#222;color:#fff;cursor:pointer;animation:glow 1.4s ease-in-out infinite alternate}
+@keyframes glow{from{box-shadow:0 0 10px #4f5bd9,0 0 30px #4f5bd9aa}to{box-shadow:0 0 24px #7c86ff,0 0 70px #7c86ffcc}}
+p{margin-top:16px;color:#9aa4b2}</style></head><body><div style="text-align:center"><button id="b">Clicked 0 times</button><p>Built by the Mesa mock model · presented via present_html</p></div>
+<script>let n=0;document.getElementById('b').onclick=()=>{n++;document.getElementById('b').textContent='Clicked '+n+' times'}</script></body></html>`;
+
+async function mockChat(req, res) {
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  const body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+  const last = messages[messages.length - 1] ?? {};
+  const hasTools = Array.isArray(body.tools) && body.tools.length > 0;
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-control', 'connection': 'keep-alive' });
+  const send = async (obj) => { res.write(`data: ${JSON.stringify({ id: 'mock', object: 'chat.completion.chunk', model: 'mesa-mock', choices: [{ index: 0, ...obj }] })}\n\n`); await new Promise((r) => setTimeout(r, 25)); };
+  const text = async (s) => { for (const piece of s.match(/.{1,6}/gs) ?? []) await send({ delta: { content: piece } }); };
+  const reason = async (s) => { for (const piece of s.match(/.{1,10}/gs) ?? []) await send({ delta: { reasoning_content: piece } }); };
+  const call = async (id, name, args) => {
+    await send({ delta: { tool_calls: [{ index: 0, id, type: 'function', function: { name, arguments: '' } }] } });
+    for (const piece of args.match(/.{1,40}/gs) ?? []) await send({ delta: { tool_calls: [{ index: 0, function: { arguments: piece } }] } });
+    await send({ delta: {}, finish_reason: 'tool_calls' });
+  };
+  if (last.role === 'user' && typeof last.content === 'string' && last.content.startsWith('echo:')) {
+    // Test hook: stream the rest of the prompt verbatim (markdown / HTML edge cases).
+    const body = last.content.slice(5).replace(/^\s+/, '');
+    for (const piece of body.match(/[\s\S]{1,24}/g) ?? []) { await send({ delta: { content: piece } }); await new Promise((r) => setTimeout(r, 4)); }
+    await send({ delta: {}, finish_reason: 'stop' });
+  } else if (last.role === 'user' && hasTools) {
+    await reason('The user wants a page. I should look at the workspace first, then present the HTML.');
+    await call('call_bash_1', 'bash', JSON.stringify({ command: 'ls', cwd: 'mesa-demo' }));
+  } else if (last.role === 'tool' && hasTools && last.tool_call_id === 'call_bash_1') {
+    await reason('The workspace has src/. Now I will present the page as an artifact.');
+    await call('call_present_1', 'present_html', JSON.stringify({ title: 'Glowing Click Counter', html: MOCK_HTML }));
+  } else if (last.role === 'user' && !hasTools) {
+    await text('Here is a tiny self-contained HTML page with a glowing button that counts clicks.\n\n```html\n' + MOCK_HTML + '\n```\n');
+    await send({ delta: {}, finish_reason: 'stop' });
+  } else {
+    await text('Done — I built **Glowing Click Counter** and presented it as an artifact. Open the preview and click the button to verify the count updates.');
+    await send({ delta: {}, finish_reason: 'stop' });
+  }
+  res.write('data: [DONE]\n\n');
+  res.end();
+}

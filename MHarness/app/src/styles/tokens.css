@@ -1,0 +1,107 @@
+:root {
+  --mesa-bg-canvas: #f4f5f7;
+  --mesa-bg-surface: #ffffff;
+  --mesa-bg-elevated: rgba(255, 255, 255, 0.82);
+  --mesa-bg-sunken: #eceef2;
+  --mesa-bg-hover: rgba(21, 24, 29, 0.05);
+  --mesa-bg-active: rgba(21, 24, 29, 0.09);
+  --mesa-border-subtle: #e3e6eb;
+  --mesa-border-strong: #c9ced6;
+  --mesa-text-primary: #15181d;
+  --mesa-text-secondary: #5b6472;
+  --mesa-text-muted: #8a93a1;
+  --mesa-accent: #4f5bd9;
+  --mesa-accent-soft: rgba(79, 91, 217, 0.12);
+  --mesa-accent-glow: rgba(79, 91, 217, 0.35);
+  --mesa-success: #1f9d63;
+  --mesa-success-soft: rgba(31, 157, 99, 0.12);
+  --mesa-warning: #d98a0b;
+  --mesa-warning-soft: rgba(217, 138, 11, 0.14);
+  --mesa-danger: #d64545;
+  --mesa-danger-soft: rgba(214, 69, 69, 0.12);
+  --mesa-info: #2a8bd6;
+  --mesa-info-soft: rgba(42, 139, 214, 0.12);
+  --mesa-diff-add-bg: #dff5e9;
+  --mesa-diff-add-text: #147a47;
+  --mesa-diff-del-bg: #fbe3e3;
+  --mesa-diff-del-text: #b83232;
+  --mesa-r-sm: 4px;
+  --mesa-r-md: 8px;
+  --mesa-r-lg: 12px;
+  --mesa-r-full: 999px;
+  --mesa-e1: 0 1px 2px rgba(0, 0, 0, 0.14);
+  --mesa-e2: 0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+  --mesa-e3: 0 24px 64px rgba(0, 0, 0, 0.33), 0 4px 12px rgba(0, 0, 0, 0.2);
+  --mesa-type-sans: 'Inter Variable', Inter, 'Segoe UI Variable', system-ui, sans-serif;
+  --mesa-type-mono: 'JetBrains Mono', 'Cascadia Code', 'SF Mono', ui-monospace, monospace;
+  --mesa-m-instant: 80ms;
+  --mesa-m-fast: 140ms;
+  --mesa-m-base: 220ms;
+  --mesa-m-slow: 360ms;
+  --mesa-e-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --mesa-e-in: cubic-bezier(0.4, 0, 1, 1);
+  --mesa-e-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mesa-row: 36px;
+  --mesa-blur: 16px;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --mesa-bg-canvas: #0f1115;
+  --mesa-bg-surface: #161a21;
+  --mesa-bg-elevated: rgba(28, 33, 42, 0.82);
+  --mesa-bg-sunken: #0b0d11;
+  --mesa-bg-hover: rgba(255, 255, 255, 0.06);
+  --mesa-bg-active: rgba(255, 255, 255, 0.1);
+  --mesa-border-subtle: #232933;
+  --mesa-border-strong: #3a4250;
+  --mesa-text-primary: #e8ebef;
+  --mesa-text-secondary: #9aa4b2;
+  --mesa-text-muted: #6b7684;
+  --mesa-accent: #7c86ff;
+  --mesa-accent-soft: rgba(124, 134, 255, 0.16);
+  --mesa-accent-glow: rgba(124, 134, 255, 0.45);
+  --mesa-success: #37c981;
+  --mesa-success-soft: rgba(55, 201, 129, 0.14);
+  --mesa-warning: #f0a62a;
+  --mesa-warning-soft: rgba(240, 166, 42, 0.16);
+  --mesa-danger: #ff6b6b;
+  --mesa-danger-soft: rgba(255, 107, 107, 0.14);
+  --mesa-info: #4fb3ff;
+  --mesa-info-soft: rgba(79, 179, 255, 0.14);
+  --mesa-diff-add-bg: #12321f;
+  --mesa-diff-add-text: #37c981;
+  --mesa-diff-del-bg: #3a1818;
+  --mesa-diff-del-text: #ff7b7b;
+  --mesa-e1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --mesa-e2: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --mesa-e3: 0 24px 64px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+[data-density='compact'] { --mesa-row: 28px; }
+[data-density='terminal'] { --mesa-row: 24px; }
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--mesa-type-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--mesa-text-primary);
+  background: var(--mesa-bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+input, textarea { font: inherit; color: inherit; }
+::selection { background: var(--mesa-accent-soft); }
+:focus-visible { outline: 2px solid var(--mesa-border-strong); outline-offset: 2px; border-radius: var(--mesa-r-sm); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--mesa-border-subtle); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--mesa-border-strong); background-clip: padding-box; border: 2px solid transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

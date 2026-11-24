@@ -1,0 +1,5 @@
+﻿nodeLinker: hoisted
+shamefullyHoist: true
+onlyBuiltDependencies:
+  - esbuild
+

@@ -1,0 +1,17 @@
+# dependencies / builds
+node_modules/
+dist/
+.pnpm-store/
+*.log
+
+# local-only configuration (contains API keys)
+MHarness/app/mesa.config.json
+.env
+.env.*
+
+# scratch
+.tmp/
+.shots/
+.playwright-mcp/
+.DS_Store
+Thumbs.db
