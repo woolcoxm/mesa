@@ -90,7 +90,7 @@ kbd { font-family: var(--mesa-type-sans); font-size: 10px; padding: 1px 5px; bor
 .nav-row.on { background: var(--mesa-bg-active); color: var(--mesa-text-primary); }
 .nav-row span:nth-child(2) { flex: 1; }
 .nav-row .count { font-size: 10px; color: var(--mesa-text-muted); }
-.rail-resize { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; z-index: 5; }
+.rail-resize { position: absolute; top: 0; right: 0; width: 7px; height: 100%; cursor: col-resize; z-index: 6; }
 .rail-resize:hover { background: linear-gradient(90deg, transparent, var(--mesa-accent-soft)); }
 
 /* ---------- header ---------- */
@@ -686,3 +686,17 @@ kbd { font-family: var(--mesa-type-sans); font-size: 10px; padding: 1px 5px; bor
 
 .link-btn { background: none; border: 0; padding: 0 4px; color: var(--mesa-text-secondary); text-decoration: underline; font-size: 10.5px; }
 .link-btn:hover { color: var(--mesa-danger); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .composer-hint, .tm-label, .pill-model { display: none; }
+  .showcase { width: min(460px, calc(100vw - var(--sidebar-w) - var(--dock-w) - 28px)); right: calc(var(--dock-w) + 12px); }
+  .suggest { grid-template-columns: 1fr; }
+}
+@media (max-width: 960px) {
+  .dock-tabs .dock-tab { padding: 0 7px; font-size: 10.5px; }
+  .user-text { max-width: 85%; }
+}
+.pf-actions { flex-wrap: wrap; row-gap: 8px; }
+.pf-actions .tk-remember { white-space: nowrap; }
+.pf-status { flex: 1 1 220px; text-align: right; min-height: 18px; }

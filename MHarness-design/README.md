@@ -1,3 +1,5 @@
+> The implementation of this brief lives in [MHarness/app](../MHarness/app/README.md); the product README with screenshots is at the [repo root](../README.md).
+
 # Mesa — Design Brief for a "Fancy" GUI Harness for LLM Agents
 
 Index of the deliverables (in the order the brief requested).

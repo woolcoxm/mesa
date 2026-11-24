@@ -18,11 +18,11 @@ function StateDot({ s }: { s: Session }) {
   return <span className={cls} title={s.state === 'awaiting' ? 'Awaiting approval' : s.state === 'running' ? 'Running' : s.hasDeliverables ? 'Has deliverables' : 'Idle'} />;
 }
 
-export function Rail() {
+export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
   const st = useStore();
   const [renaming, setRenaming] = useState<string | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
-  const open = st.rail.open && st.settings.sidebarWidth > 80;
+  const open = st.rail.open && !forceCollapsed && st.settings.sidebarWidth > 80;
   const filtered = useMemo(() => st.sessions.filter((s) => !st.rail.search || s.title.toLowerCase().includes(st.rail.search.toLowerCase())), [st.sessions, st.rail.search]);
 
   const grouped = useMemo(() => {
@@ -32,7 +32,7 @@ export function Rail() {
   }, [filtered]);
 
   return (
-    <div ref={railRef} className={'rail' + (open ? '' : ' collapsed')} style={{ width: st.settings.sidebarWidth }}>
+    <div ref={railRef} className={'rail' + (open ? '' : ' collapsed')} style={{ width: open ? st.settings.sidebarWidth : 56 }}>
       <div className="rail-top">
         <button className="ws-btn" title="Switch workspace (Ctrl+Shift+W)">
           <span className="ws-mark">M</span>
@@ -87,10 +87,13 @@ function ResizeHandle() {
   const st = useStore();
   return (
     <div className="rail-resize" onPointerDown={(e) => {
+      e.preventDefault();
+      const el = e.currentTarget; el.setPointerCapture(e.pointerId);
       const startX = e.clientX; const startW = st.settings.sidebarWidth;
+      document.body.classList.add('resizing');
       const move = (ev: PointerEvent) => setSidebarWidth(startW + ev.clientX - startX);
-      const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+      const up = (ev: PointerEvent) => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('lostpointercapture', up); if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId); document.body.classList.remove('resizing'); };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('lostpointercapture', up);
     }} title="Drag to resize" />
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Check, Info, AlertTriangle, OctagonAlert, Sun, Moon, Monitor, Sparkles, Puzzle, CalendarClock, Power, Keyboard, SlidersHorizontal } from 'lucide-react';
 import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings } from '../state/store';
 import { listModels, PROVIDER_PRESETS, testProvider } from '../agent/provider';
@@ -66,18 +66,20 @@ function ProviderForm() {
   const [msg, setMsg] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [listing, setListing] = useState(false);
+  const reqId = useRef(0); // ignores stale responses from a previous preset/test
   const set = (patch: Partial<typeof p>) => updateSettings({ provider: { ...p, ...patch } });
   const pickPreset = (id: string) => {
     const pr = PROVIDER_PRESETS.find((x) => x.id === id)!;
+    reqId.current++;
     set({ preset: id, baseUrl: pr.baseUrl || p.baseUrl, model: pr.model || (models[0] ?? p.model) });
-    setStatus('idle'); setMsg('');
+    setStatus('idle'); setMsg(''); setListing(false);
   };
-  const test = async () => { setStatus('testing'); try { const r = await testProvider({ ...p }); setMsg(r); setStatus('ok'); } catch (e) { setMsg(e instanceof Error ? e.message : String(e)); setStatus('fail'); } };
+  const test = async () => { const id = ++reqId.current; setStatus('testing'); try { const r = await testProvider({ ...p }); if (id !== reqId.current) return; setMsg(r); setStatus('ok'); } catch (e) { if (id !== reqId.current) return; setMsg(e instanceof Error ? e.message : String(e)); setStatus('fail'); } };
   const fetchModels = async () => {
-    setListing(true); setStatus('idle');
-    try { const list = await listModels({ ...p }); setModels(list); setMsg(`${list.length} models`); if (list.length && !list.includes(p.model)) set({ model: list[0] }); setStatus('ok'); }
-    catch (e) { setMsg(e instanceof Error ? e.message : String(e)); setStatus('fail'); }
-    setListing(false);
+    const id = ++reqId.current; setListing(true); setStatus('idle');
+    try { const list = await listModels({ ...p }); if (id !== reqId.current) return; setModels(list); setMsg(`${list.length} model${list.length === 1 ? '' : 's'}`); if (list.length && !list.includes(p.model)) set({ model: list[0] }); setStatus('ok'); }
+    catch (e) { if (id !== reqId.current) return; setMsg(e instanceof Error ? e.message : String(e)); setStatus('fail'); }
+    if (id === reqId.current) setListing(false);
   };
   return (
     <div className="provider-form">

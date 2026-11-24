@@ -594,6 +594,8 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
     let result: StreamResult;
     try { result = await handle.done; }
     catch (e) {
+      const aborted = e instanceof DOMException && e.name === 'AbortError';
+      if (aborted && turnCancelled(sessionId, turnId)) break; // user pressed Stop — not an error
       const msg = e instanceof Error ? e.message : String(e);
       updateBlock(sessionId, turnId, blockId, (b) => { if (b.type === 'text') { b.text += `\n\n> **Model error** — ${msg}`; b.streaming = false; } });
       toast('Model request failed: ' + msg.slice(0, 80), 'error');

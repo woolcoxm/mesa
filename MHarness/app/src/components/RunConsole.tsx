@@ -34,6 +34,7 @@ export function Terminal({ session, run }: { session: Session; run: Run }) {
   }, [run.id]);
   useEffect(() => {
     const t = term.current; if (!t) return;
+    if (run.lines.length < written.current) { t.clear(); written.current = 0; }
     const start = Math.min(written.current, run.lines.length);
     for (let i = start; i < run.lines.length; i++) t.writeln(colorize(run.lines[i]));
     written.current = run.lines.length;

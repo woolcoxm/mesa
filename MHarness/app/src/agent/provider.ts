@@ -89,7 +89,7 @@ export function streamChat(cfg: ProviderConfig, messages: ChatMessage[], onDelta
 /** GET /models on the endpoint → sorted ids. */
 export async function listModels(cfg: ProviderConfig): Promise<string[]> {
   const res = await fetch(urlFor(cfg.baseUrl, cfg.proxy, '/models'), { headers: cfg.apiKey ? { authorization: `Bearer ${cfg.apiKey}` } : {} });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${(await res.text()).slice(0, 200)}`);
   const json = await res.json();
   const list: unknown[] = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
   return list.map((m) => (typeof m === 'string' ? m : (m as { id?: string; name?: string })?.id ?? (m as { name?: string })?.name ?? '')).filter(Boolean).sort();
