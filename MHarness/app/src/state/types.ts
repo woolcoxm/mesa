@@ -146,6 +146,7 @@ export interface Session {
   selectedRunId?: Id;
   activeTab?: DockTab;
   hasDeliverables: boolean;
+  allowSessionShell?: boolean;
   queued: QueuedMsg[];
   pendingApproval?: Approval;
   cancel?: () => void;
@@ -193,4 +194,5 @@ export interface AppState {
   focus: { callId: Id; n: number } | null;
   tour: number | null;
   publish: { sessionId: Id; artifactId: Id } | null;
+  cheat: boolean;
 }

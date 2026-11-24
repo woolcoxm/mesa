@@ -9,6 +9,8 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - **Drag and drop** files onto the composer to attach them; dropped HTML/SVG files open directly in the preview.
 - **URL routing** — #/s/<session>/<tab> deep links restore the active session and dock tab on reload or from a bookmark.
 - Palette commands for accent colours and density; **token sparkline** in Stats; cost estimates marked as estimated or unpriced.
+- **? shortcut cheat sheet** (searchable, respects overrides) and **empty-state calls to action** in every dock tab.
+- Approval scope **allow for this session** (between once and always-for-repo) for live shell commands.
 
 ## [0.2.0] — 2026-11-24
 

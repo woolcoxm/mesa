@@ -14,6 +14,7 @@ import { Tour } from './components/Tour';
 import { CanvasPane } from './components/CanvasPane';
 import { PublishDialog } from './components/PublishDialog';
 import { KeyHints } from './components/KeyHints';
+import { CheatSheet } from './components/CheatSheet';
 import { useNarrow, useStore } from './state/useStore';
 import { applyAccent, sc } from './state/platform';
 import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette } from './state/store';
@@ -74,6 +75,7 @@ export function App() {
       <Tour />
       <PublishDialog />
       <KeyHints />
+      <CheatSheet />
       <TrayStack />
       <Toasts />
       <Palette />

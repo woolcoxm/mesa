@@ -804,3 +804,16 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 .spark { display: flex; gap: 3px; align-items: flex-end; height: 56px; margin: 0 14px 10px; padding: 6px 10px; border-radius: var(--mesa-r-md); background: var(--mesa-bg-sunken); }
 .spark-bar { flex: 1; min-width: 4px; max-width: 56px; background: linear-gradient(180deg, var(--mesa-accent), var(--mesa-info)); border-radius: 3px 3px 0 0; animation: growBar .6s var(--mesa-e-out) both; transform-origin: bottom; }
 .spark-bar:hover { filter: brightness(1.2); }
+/* ---------- cheat sheet, scope select, empty CTA ---------- */
+.tk-scope { height: 24px; margin: 0 4px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--mesa-border-subtle); background: var(--mesa-bg-surface); color: var(--mesa-text-primary); font-size: 12px; }
+.et-cta { margin-top: 10px; }
+.cheat-overlay { align-items: flex-start; padding-top: 8vh; }
+.cheat { width: 640px; max-width: calc(100vw - 32px); border-radius: 16px; background: var(--mesa-bg-elevated); backdrop-filter: blur(var(--mesa-blur)); border: 1px solid var(--mesa-border-subtle); box-shadow: var(--mesa-e3); overflow: hidden; animation: pop var(--mesa-m-base) var(--mesa-e-out); }
+.cheat-head { display: flex; align-items: center; gap: 10px; white-space: nowrap; padding: 12px 14px 12px 16px; border-bottom: 1px solid var(--mesa-border-subtle); font-size: 13px; }
+.cheat-head .muted { font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.cheat-body { padding: 8px 16px 12px; max-height: 60vh; overflow-y: auto; }
+.cheat-group { margin-top: 8px; }
+.cheat-group-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mesa-text-muted); padding: 4px 0 2px; }
+.cheat-row { display: flex; align-items: center; height: 30px; font-size: 12.5px; color: var(--mesa-text-secondary); border-bottom: 1px dashed var(--mesa-border-subtle); }
+.cheat-chord { display: inline-flex; gap: 3px; }
+.cheat-foot { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--mesa-border-subtle); background: var(--mesa-bg-surface); }

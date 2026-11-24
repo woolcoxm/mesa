@@ -131,7 +131,7 @@ function PlanCard({ session }: { session: Session }) {
 export function ApprovalTakeover({ session, approval, draft }: { session: Session; approval: Approval; draft: string }) {
   const [reason, setReason] = useState('');
   const [deny, setDeny] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [scope, setScope] = useState<'once' | 'session' | 'repo'>('once');
   const risk = approval.risk;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -142,7 +142,7 @@ export function ApprovalTakeover({ session, approval, draft }: { session: Sessio
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [session.id, deny, reason]);
-  const allow = () => decide(session.id, remember ? { action: 'allow-always' } : { action: 'allow-once' });
+  const allow = () => decide(session.id, scope === 'repo' ? { action: 'allow-always' } : scope === 'session' ? { action: 'allow-session' } : { action: 'allow-once' });
   return (
     <div className={'takeover' + (deny ? ' deny' : '')} role="dialog" aria-labelledby="ap-title">
       <div className="takeover-head"><ShieldAlert size={16} /><div><div id="ap-title" className="tk-title">{approval.title}</div><div className="tk-sub">{approval.kind} · requested {Math.round((Date.now() - approval.requestedAt) / 1000)}s ago</div></div><span className={'risk r-' + (risk?.level ?? 'medium')}>{risk?.level ?? 'medium'} risk</span></div>
@@ -153,10 +153,10 @@ export function ApprovalTakeover({ session, approval, draft }: { session: Sessio
         <div className="tk-deny"><input autoFocus placeholder="Why? (sent to the agent)" value={reason} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') decide(session.id, { action: 'deny', reason }); }} /><button className="btn ghost" onClick={() => setDeny(false)}>Back</button><button className="btn danger" onClick={() => decide(session.id, { action: 'deny', reason })}>Deny</button></div>
       ) : (
         <div className="tk-actions">
-          <label className="tk-remember"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> always allow for this repo</label>
+          <label className="tk-remember">Allow <select className="tk-scope" value={scope} onChange={(e) => setScope(e.target.value as typeof scope)} aria-label="Approval scope"><option value="once">once</option><option value="session">for this session</option><option value="repo">always for this repo</option></select></label>
           <span className="composer-spacer" />
           <button className="btn ghost" onClick={() => setDeny(true)} title="Deny with reason (Alt+R)"><X size={14} />Deny</button>
-          <button className="btn primary" onClick={allow} autoFocus title="Allow (Alt+A)"><ShieldCheck size={14} />{remember ? 'Always allow' : 'Allow once'}</button>
+          <button className="btn primary" onClick={allow} autoFocus title="Allow (Alt+A)"><ShieldCheck size={14} />{scope === 'once' ? 'Allow once' : scope === 'session' ? 'Allow for session' : 'Always allow'}</button>
         </div>
       )}
       <div className="tk-hint"><AlertTriangle size={11} /> Agent is paused until you decide. <kbd>{sc('Alt')}</kbd><kbd>A</kbd> allow · <kbd>{sc('Alt')}</kbd><kbd>R</kbd> deny <span className="spacer" /><button className="link-btn" onClick={() => cancelTurn(session.id)}>Cancel turn</button></div>

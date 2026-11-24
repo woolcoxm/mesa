@@ -112,9 +112,9 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 ## Keyboard
 
-![Hold Ctrl to reveal shortcut badges](docs/screenshots/23-key-hints.png)
+![Hold Ctrl to reveal shortcut badges](docs/screenshots/23-key-hints.png) ![Press ? for the cheat sheet](docs/screenshots/25-cheat-sheet.png)
 
-Hold **Ctrl/⌘** to reveal every available shortcut as a badge on its control. Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
+Hold **Ctrl/⌘** to reveal every available shortcut as a badge on its control, or press **`?`** for a searchable cheat sheet. Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
 
 | | | | |
 |---|---|---|---|

@@ -89,7 +89,7 @@ export function RunConsole({ session }: { session: Session }) {
             </div>
             <Terminal key={selected.id} session={session} run={selected} />
           </>
-        ) : <EmptyTab icon={<TerminalIcon size={22} />} text="No runs yet" sub="Commands the agent runs — or a terminal you open — show up here." />}
+        ) : <EmptyTab icon={<TerminalIcon size={22} />} text="No runs yet" sub="Commands the agent runs — or a terminal you open — show up here." action={{ label: 'New terminal', run: () => newTerminal(session.id) }} />}
       </div>
       {jobs.length > 0 && (
         <div className="jobs">

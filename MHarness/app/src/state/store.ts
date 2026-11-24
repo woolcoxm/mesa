@@ -70,6 +70,7 @@ const initial: AppState = {
   focus: null,
   tour: null,
   publish: null,
+  cheat: false,
 };
 
 let state: AppState = initial;
@@ -236,6 +237,8 @@ export function setCheckpoint(sessionId: Id, label: string, auto = false) {
 
 export function insertIntoComposer(text: string) { state = { ...state, insert: { text, n: Date.now() } }; emit(); }
 export function clearInsert() { if (state.insert) { state = { ...state, insert: null }; } }
+export function openCheat() { state = { ...state, cheat: true }; emit(); }
+export function closeCheat() { if (state.cheat) { state = { ...state, cheat: false }; emit(); } }
 export function openPublish(sessionId: Id, artifactId: Id) { state = { ...state, publish: { sessionId, artifactId } }; emit(); }
 export function closePublish() { state = { ...state, publish: null }; emit(); }
 export function setTour(step: number | null) { state = { ...state, tour: step }; emit(); }
@@ -297,7 +300,7 @@ export function decide(sessionId: Id, decision: Decision) {
   const s = state.sessions.find((x) => x.id === sessionId); const ap = s?.pendingApproval; if (!s || !ap) return;
   approvalResolvers.get(ap.id)?.(decision);
   approvalResolvers.delete(ap.id);
-  updateSession(sessionId, (ss) => { ss.pendingApproval = undefined; ss.state = ss.turns.some((t) => t.status === 'running') ? 'running' : 'idle'; });
+  updateSession(sessionId, (ss) => { ss.pendingApproval = undefined; ss.state = ss.turns.some((t) => t.status === 'running') ? 'running' : 'idle'; if (decision.action === 'allow-session') ss.allowSessionShell = true; });
   pushTimeline(sessionId, { label: `approval ${decision.action}`, kind: 'approval' });
 }
 
@@ -649,7 +652,8 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
       if (name === 'bash') {
         const preset = state.sessions.find((x) => x.id === sessionId)?.preset ?? 'workspace-write';
         let allowed = true;
-        if (preset !== 'full-access') {
+        const cur = state.sessions.find((x) => x.id === sessionId);
+        if (preset !== 'full-access' && !cur?.allowSessionShell) {
           const cmd = String(args.command ?? '');
           const flags = ['rm -rf', 'sudo', '| sh', '| bash', 'curl ', 'git push', 'drop'].filter((f) => cmd.includes(f));
           const d = await requestApproval(sessionId, turnId, tb, tcId, { kind: 'shell', title: 'Run shell command', detail: cmd, flags, risk: { level: flags.length ? 'high' : 'medium', rationale: flags.length ? `Matches dangerous pattern(s): ${flags.join(', ')}` : state.settings.shell ? 'Requested by the live model — runs for real on this machine (inside the repository folder).' : 'Requested by the live model; runs in the demo sandbox.' } }, false);

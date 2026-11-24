@@ -7,6 +7,7 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
   { id: 'palette', label: 'Command palette', def: 'Control+KeyK', group: 'Global', whenTyping: true },
   { id: 'newSession', label: 'New session', def: 'Control+KeyN', group: 'Session' },
   { id: 'rename', label: 'Rename session', def: 'F2', group: 'Session' },
+  { id: 'cheat', label: 'Shortcut cheat sheet', def: 'Shift+Slash', group: 'Global' },
   { id: 'toggleRail', label: 'Toggle left rail', def: 'Control+Backslash', group: 'Global' },
   { id: 'toggleDock', label: 'Toggle right dock', def: 'Control+Shift+Backslash', group: 'Global', macControl: true },
   { id: 'floatDock', label: 'Float / unfloat dock tab', def: 'Control+Shift+KeyF', group: 'Dock', macControl: true },

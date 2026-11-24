@@ -3,7 +3,8 @@ import {
   Layers, Play, Share2, Pin, PinOff, FileCode2, ChartColumn, AppWindow, FileText, Table2, TestTube2, GitCompare, Sparkles, Bot, Check, Loader2, AlertTriangle, Clock, Target, History, Globe, ArrowRight, SplitSquareHorizontal, Rows3, RotateCcw, ExternalLink, Camera, MousePointerClick, FileDiff, ListChecks,
 } from 'lucide-react';
 import { CHART_HTML } from '../agent/scenarios';
-import { focusCall, openBesideChat, openPublish, pinArtifact, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
+import { focusCall, openBesideChat, openPublish, pinArtifact, send, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
+const focusComposer = () => { const el = document.querySelector('.composer-input') as HTMLTextAreaElement | null; el?.focus(); };
 import type { Artifact, ArtifactKind, DiffInfo, Session, TLEvent, ToolCall } from '../state/types';
 import { AdhocBanner, Markdown } from './Markdown';
 import { NotebookView, notebookThumb } from './NotebookView';
@@ -94,7 +95,7 @@ export function ArtifactsTab({ session }: { session: Session }) {
     <div className="tab-scroll">
       <div className="tab-head"><Layers size={14} /><b>Artifacts</b><span className="muted">{session.artifacts.length}</span><span className="spacer" /><button className="chip-btn" onClick={() => toggleGallery(true)}>Gallery</button></div>
       <div className="filters">{(['all', 'delivered', 'changed', 'pinned'] as const).map((f) => <button key={f} className={'filter' + (filter === f ? ' on' : '')} onClick={() => setFilter(f)}>{f}{f === 'pinned' ? ` ${session.artifacts.filter((a) => a.pinned).length}` : ''}</button>)}</div>
-      {items.length === 0 ? <EmptyTab icon={<Layers size={22} />} text="No artifacts yet" sub="Deliverables the agent declares with present land here." /> : <div className="agrid">{items.map((a) => <ArtifactCard key={a.id} a={a} session={session} hero={filter === 'all' && delivered.has(a.id)} />)}</div>}
+      {items.length === 0 ? <EmptyTab icon={<Layers size={22} />} text="No artifacts yet" sub="Deliverables the agent declares with present land here." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} /> : <div className="agrid">{items.map((a) => <ArtifactCard key={a.id} a={a} session={session} hero={filter === 'all' && delivered.has(a.id)} />)}</div>}
       {changed.length > 0 && filter !== 'changed' && (
         <div className="changed-block">
           <div className="section-title">Changed files <span className="muted">{changed.length}</span></div>
@@ -120,7 +121,7 @@ export function FilesTab({ session }: { session: Session }) {
   return (
     <div className="tab-scroll files-tab">
       <div className="tab-head"><FileDiff size={14} /><b>Files & diffs</b><span className="muted">{diffs.length}</span><span className="spacer" /><button className={'icon-btn sm' + (split ? ' on' : '')} title="Split view" onClick={() => setSplit(!split)}>{split ? <Rows3 size={13} /> : <SplitSquareHorizontal size={13} />}</button></div>
-      {diffs.length === 0 ? <EmptyTab icon={<FileDiff size={22} />} text="No diffs yet" sub="Edits made by the agent show up here with a one-click diff." /> : (
+      {diffs.length === 0 ? <EmptyTab icon={<FileDiff size={22} />} text="No diffs yet" sub="Edits made by the agent show up here with a one-click diff." action={{ label: 'Run the fix-the-tests demo', run: () => send('Run the tests and fix whatever fails') }} /> : (
         <div className="files-split">
           <div className="file-list">{diffs.map((d) => <button key={d.id} className={'file-row' + (current?.id === d.id ? ' on' : '')} onClick={() => setSel(d.id)}><span className={'fr-state ' + (d.status === 'success' ? 'ok' : d.status === 'denied' ? 'bad' : 'run')} /><span className="fr-name">{d.diff.file}</span><span className="fr-stat"><span className="add">+{d.diff.added}</span> <span className="del">−{d.diff.removed}</span></span></button>)}</div>
           <div className="file-diff">{current && <DiffViewer key={current.id + String(split)} call={current} split={split} />}</div>
@@ -161,7 +162,7 @@ export function AgentsTab({ session }: { session: Session }) {
           {session.agents.map((a) => (
             <div key={a.id} className="agent-node child"><span className="an-line" /><span className="an-mark small">A</span><div><b>{a.name}</b><div className="an-sub">{a.role}{a.note ? ` · ${a.note}` : ''}</div></div><span className="an-cost">${a.cost.toFixed(3)}</span><span className={'an-state ' + a.status}>{a.status === 'running' ? <Loader2 size={11} className="spin" /> : a.status === 'done' ? <Check size={11} /> : null}{a.status}</span></div>
           ))}
-          {!session.agents.length && <EmptyTab icon={<Bot size={22} />} text="No subagents yet" sub="Ask for a multi-file refactor to see the tree fill in." />}
+          {!session.agents.length && <EmptyTab icon={<Bot size={22} />} text="No subagents yet" sub="Ask for a multi-file refactor to see the tree fill in." action={{ label: 'Spawn subagents (demo)', run: () => send('Refactor: rename Series to TimeSeries across the repo') }} />}
         </div>
       ) : (
         <div className="board">
@@ -188,7 +189,7 @@ export function StatsTab({ session }: { session: Session }) {
       <table className="stats-table"><thead><tr><th>Turn</th><th>Tools</th><th>In</th><th>Out</th><th>Cached</th><th>Time</th><th>Cost</th></tr></thead>
         <tbody>{rows.map((t, i) => <tr key={t.id}><td className="ellip" title={t.user}>{i + 1}. {t.user}</td><td>{t.blocks.filter((b) => b.type === 'tool').length}</td><td>{t.usage.inputTokens.toLocaleString()}</td><td>{t.usage.outputTokens.toLocaleString()}</td><td>{t.usage.cachedTokens.toLocaleString()}</td><td>{(t.usage.latencyMs / 1000).toFixed(1)}s</td><td>${t.usage.costUsd.toFixed(4)}</td></tr>)}</tbody>
         <tfoot><tr><td>Total</td><td></td><td>{tot.i.toLocaleString()}</td><td>{tot.o.toLocaleString()}</td><td>{tot.c.toLocaleString()}</td><td>{(tot.ms / 1000).toFixed(1)}s</td><td>${tot.$.toFixed(4)}</td></tr></tfoot></table>
-      {!rows.length && <EmptyTab icon={<Target size={22} />} text="No turns yet" sub="Tokens, cache and cost appear after the first turn." />}
+      {!rows.length && <EmptyTab icon={<Target size={22} />} text="No turns yet" sub="Tokens, cache and cost appear after the first turn." action={{ label: 'Start a conversation', run: focusComposer }} />}
     </div>
   );
 }
@@ -205,7 +206,7 @@ export function TimelineTab({ session }: { session: Session }) {
       <div className="tab-head"><History size={14} /><b>Timeline</b><span className="muted">{session.timeline.length} events</span></div>
       {session.checkpoints.length > 0 && <div className="checkpoints">{session.checkpoints.map((c) => <button key={c.id} className="cp" onClick={() => toast(`Checkpoint "${c.label}" — restore is a demo action`, 'info')}><RotateCcw size={12} />{c.label}{c.auto && <span className="tag">auto</span>}</button>)}</div>}
       <div className="tl">{session.timeline.map((e, i) => { const Icon = TL_ICON[e.kind]; return <div key={e.id} className={'tl-row k-' + e.kind + (e.callId ? ' clickable' : '')} style={{ animationDelay: `${Math.min(300, i * 20)}ms` }} onClick={() => e.callId && focusCall(e.callId)} title={e.callId ? 'Jump to this call in the thread' : undefined}><span className="tl-time">{new Date(e.ts).toLocaleTimeString([], { hour12: false })}</span><span className="tl-icon"><Icon size={11} /></span><span className="tl-label">{e.label}</span>{e.ms ? <span className="tl-bar"><i style={{ width: `${Math.max(4, (e.ms / maxMs) * 100)}%` }} /></span> : null}{e.ms ? <span className="tl-ms">{(e.ms / 1000).toFixed(1)}s</span> : null}</div>; })}</div>
-      {!session.timeline.length && <EmptyTab icon={<History size={22} />} text="No events yet" sub="Every tool call, run, approval and artifact is recorded here." />}
+      {!session.timeline.length && <EmptyTab icon={<History size={22} />} text="No events yet" sub="Every tool call, run, approval and artifact is recorded here." action={{ label: 'Start a conversation', run: focusComposer }} />}
     </div>
   );
 }
@@ -216,14 +217,14 @@ export function BrowserTab({ session }: { session: Session }) {
   return (
     <div className="browser-tab">
       <div className="browser-bar"><button className="icon-btn sm" title="Back" onClick={() => toast('History is empty in the demo browser', 'info')}>‹</button><button className="icon-btn sm" title="Forward" onClick={() => toast('History is empty in the demo browser', 'info')}>›</button><button className="icon-btn sm" title="Reload" onClick={() => { const f = document.querySelector('.browser-body iframe') as HTMLIFrameElement | null; if (f) { const s = f.srcdoc; f.srcdoc = ''; setTimeout(() => { f.srcdoc = s; }, 30); } toast('Reloading preview', 'info'); }}>⟳</button><div className="url"><Globe size={12} /><input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') toast(`Navigating to ${url} (demo browser keeps the generated app)`, 'info'); }} aria-label="URL" /></div><button className="icon-btn sm" onClick={() => toast('Opening in system browser (demo)', 'info')}><ExternalLink size={12} /></button></div>
-      <div className="browser-body">{app ? <iframe title="browser" sandbox="allow-scripts" srcDoc={app.html} /> : <EmptyTab icon={<Globe size={22} />} text="Nothing to browse" sub="Build an app and it appears here." />}</div>
+      <div className="browser-body">{app ? <iframe title="browser" sandbox="allow-scripts" srcDoc={app.html} /> : <EmptyTab icon={<Globe size={22} />} text="Nothing to browse" sub="Build an app and it appears here." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />}</div>
       <div className="browser-panel"><div className="bp-tabs"><span className="on">Console</span><span>Network</span></div><div className="bp-body"><div className="bp-log"><span className="lv">log</span>[vite] connecting…</div><div className="bp-log"><span className="lv">log</span>[vite] connected.</div><div className="bp-log"><span className="lv">hmr</span>update /src/App.tsx</div></div></div>
     </div>
   );
 }
 
-export function EmptyTab({ icon, text, sub }: { icon: React.ReactNode; text: string; sub?: string }) {
-  return <div className="empty-tab"><div className="et-icon">{icon}</div><div className="et-text">{text}</div>{sub && <div className="et-sub">{sub}</div>}</div>;
+export function EmptyTab({ icon, text, sub, action }: { icon: React.ReactNode; text: string; sub?: string; action?: { label: string; run: () => void } }) {
+  return <div className="empty-tab"><div className="et-icon">{icon}</div><div className="et-text">{text}</div>{sub && <div className="et-sub">{sub}</div>}{action && <button className="btn sm primary et-cta" onClick={action.run}>{action.label}</button>}</div>;
 }
 
 export function ChartView({ a }: { a: Artifact }) {
@@ -262,8 +263,8 @@ export function PreviewTab({ session }: { session: Session }) {
       <div className="preview-stage">
         <div className="device" style={device === 0 ? { width: '100%', height: '100%' } : { width: s.w, height: s.h }}>
           {show ? (
-            show.kind === 'chart' ? <ChartView a={show} /> : show.kind === 'notebook' && show.notebook ? <div className="nb-wrap"><NotebookView artifact={show} /></div> : show.kind === 'app' || show.kind === 'html' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={show.html ?? ''} /> : show.code ? <div className="doc-view"><Markdown text={docText} /></div> : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." />
-          ) : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." />}
+            show.kind === 'chart' ? <ChartView a={show} /> : show.kind === 'notebook' && show.notebook ? <div className="nb-wrap"><NotebookView artifact={show} /></div> : show.kind === 'app' || show.kind === 'html' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={show.html ?? ''} /> : show.code ? <div className="doc-view"><Markdown text={docText} /></div> : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />
+          ) : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />}
         </div>
       </div>
       {panel !== 'none' && (

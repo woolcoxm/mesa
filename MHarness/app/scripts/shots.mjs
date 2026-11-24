@@ -55,7 +55,7 @@ await shot('01-shell-dark');
 await page.locator('.suggest button').first().click();
 await page.waitForSelector('.takeover', { timeout: 25000 });
 await shot('02-approval');
-await page.getByText('Allow once').click();
+await page.locator('.tk-actions .btn.primary').click();
 await page.waitForSelector('.showcase', { timeout: 40000 });
 await page.waitForTimeout(1300);
 await shot('03-showcase');
@@ -98,6 +98,10 @@ await esc();
 await page.locator('.thread').click({ position: { x: 5, y: 5 } }); await page.keyboard.press('Control+k'); await page.waitForTimeout(300);
 await shot('11-palette');
 await esc();
+// 25 — shortcut cheat sheet (?)
+await page.locator('.thread').click({ position: { x: 5, y: 5 } }); await page.keyboard.press('Shift+Slash'); await page.waitForTimeout(500);
+await shot('25-cheat-sheet');
+await esc();
 await page.locator('.thread').click({ position: { x: 5, y: 5 } });
 // 23 — hold Ctrl to reveal shortcut badges
 await page.keyboard.down('Control'); await page.waitForTimeout(450);
@@ -127,7 +131,7 @@ await page.locator('.new-btn').click(); await page.waitForTimeout(200);
 await page.locator('.composer-input').fill('List the workspace, then present the counter page'); await page.keyboard.press('Enter');
 await page.waitForSelector('.takeover', { timeout: 30000 });
 await shot('15-real-shell-approval');
-await page.getByText('Allow once').click();
+await page.locator('.tk-actions .btn.primary').click();
 await page.waitForSelector('.showcase', { timeout: 40000 }); await esc();
 await page.locator('.toolrow .icon-btn[title="Toggle output"]').first().click(); await page.waitForTimeout(200);
 await page.locator('.toolrow .chip-btn:has-text("console")').first().click(); await page.waitForTimeout(700);
