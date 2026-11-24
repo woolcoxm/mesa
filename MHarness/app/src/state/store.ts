@@ -63,6 +63,7 @@ const initial: AppState = {
   tray: [],
   settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false },
   canvasSplit: null,
+  canvasArtifact: null,
   insert: null,
   confetti: null,
   adhoc: null,
@@ -137,7 +138,7 @@ export function dismissToast(id: Id) { state = { ...state, toasts: state.toasts.
 // ---------- generic setters ----------
 export function setActive(id: Id) {
   if (state.activeSessionId === id && state.page === 'session') return;
-  state = { ...state, activeSessionId: id, page: 'session', showcase: state.showcase?.sessionId === id ? state.showcase : null };
+  state = { ...state, activeSessionId: id, page: 'session', showcase: state.showcase?.sessionId === id ? state.showcase : null, canvasArtifact: state.canvasArtifact?.sessionId === id ? state.canvasArtifact : null };
   emit();
 }
 export function newSessionAction() {
@@ -163,6 +164,12 @@ export function toggleGallery(open?: boolean) { state = { ...state, gallery: { .
 export function setGalleryFilter(f: Partial<AppState['gallery']>) { state = { ...state, gallery: { ...state.gallery, ...f } }; emit(); }
 export function updateSettings(patch: Partial<AppState['settings']>) { state = { ...state, settings: { ...state.settings, ...patch } }; emit(); }
 export function setCanvasSplit(v: number | null) { state = { ...state, canvasSplit: v }; emit(); }
+export function openBesideChat(sessionId: Id, artifactId: Id) {
+  // Make room: cap the dock so the thread and the canvas each get a usable column.
+  state = { ...state, canvasSplit: 50, canvasArtifact: { sessionId, artifactId }, settings: { ...state.settings, dockWidth: Math.min(state.settings.dockWidth, 34) } };
+  emit();
+}
+export function closeCanvas() { state = { ...state, canvasSplit: null, canvasArtifact: null }; emit(); }
 export function setMode(sessionId: Id, mode: Session['mode']) { updateSession(sessionId, (s) => { s.mode = mode; }); }
 export function setPreset(sessionId: Id, preset: Preset) { updateSession(sessionId, (s) => { s.preset = preset; }); toast(`Permission preset → ${presetLabel(preset)}`, preset === 'full-access' ? 'warning' : 'info'); }
 export function setModel(sessionId: Id, model: string) { updateSession(sessionId, (s) => { s.model = model; }); }

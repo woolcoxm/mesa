@@ -182,7 +182,8 @@ export interface AppState {
   toasts: Toast[];
   tray: TrayItem[];
   settings: Settings;
-  canvasSplit: number | null; // % width for canvas view when open
+  canvasSplit: number | null; // % width of the canvas pane when open (null = closed)
+  canvasArtifact: { sessionId: Id; artifactId: Id } | null;
   insert: { text: string; n: number } | null;
   confetti: { n: number; x: number; y: number } | null;
   adhoc: { title: string; html: string } | null;

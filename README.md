@@ -44,6 +44,8 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | **Narrow layout** — the rail collapses to icons under 960 px and the dock is capped, so the thread stays usable on a laptop. | **Timeline** — every event with timing bars; click an event to flash its tool row in the thread; checkpoints are restorable. |
 | ![Guided tour](docs/screenshots/18-tour.png) | ![Accent colours](docs/screenshots/17-accent-rose.png) |
 | **Guided tour** — an animated spotlight walks through the shell on first run; replay from Settings or the palette. | **Accent colours** — six palettes re-tint buttons, cursors, charts and the showcase in both themes. |
+| ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | |
+| **Canvas beside chat** — "Beside chat" on any app or chart deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | |
 
 ---
 

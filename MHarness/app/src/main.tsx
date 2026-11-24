@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { seed, getState, renameSession, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
+import { seed, getState, renameSession, closeCanvas, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
 import { IS_MAC } from './state/platform';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -36,6 +36,7 @@ async function boot() {
       const session = s.sessions.find((x) => x.id === s.activeSessionId);
       if (session?.pendingApproval) return; // the approval takeover owns Esc (deny flow)
       if (s.showcase && !s.showcase.minimized) return dismissShowcase();
+      if (s.canvasSplit && s.page === 'session') return closeCanvas();
       return;
     }
     if (!mod) return;

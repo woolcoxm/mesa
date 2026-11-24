@@ -11,6 +11,7 @@ import { Gallery } from './components/Gallery';
 import { Toasts, SettingsPage, PluginsPage, AutomationsPage } from './components/Pages';
 import { Confetti } from './components/Confetti';
 import { Tour } from './components/Tour';
+import { CanvasPane } from './components/CanvasPane';
 import { useNarrow, useStore } from './state/useStore';
 import { applyAccent } from './state/platform';
 import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette } from './state/store';
@@ -30,17 +31,23 @@ export function App() {
     return () => mq.removeEventListener('change', apply);
   }, [st.settings.theme, st.settings.density]);
   const jobs = session?.runs.filter((r) => r.status === 'running' && r.background).length ?? 0;
+  const canvas = !!session && st.canvasArtifact?.sessionId === session.id ? session.artifacts.find((a) => a.id === st.canvasArtifact?.artifactId) : undefined;
+  const tight = useNarrow(1600);
+  const railCollapsed = narrow || (!!canvas && tight); // make room for thread + canvas on smaller screens
   const glow = !!st.showcase?.minimized;
   return (
-    <div className={'app' + (st.dock.open ? '' : ' no-dock') + (st.dock.floating ? ' dock-float' : '')} style={{ ['--dock-w' as string]: !st.dock.open ? '0px' : narrow ? 'clamp(300px, 40vw, 520px)' : `${st.settings.dockWidth}%`, ['--sidebar-w' as string]: `${narrow || !st.rail.open ? 56 : st.settings.sidebarWidth}px` }}>
-      <Rail forceCollapsed={narrow} />
-      <main className="center" key={st.page === 'session' ? session?.id ?? 'none' : st.page}>
+    <div className={'app' + (st.dock.open ? '' : ' no-dock') + (st.dock.floating ? ' dock-float' : '')} style={{ ['--dock-w' as string]: !st.dock.open ? '0px' : narrow ? 'clamp(300px, 40vw, 520px)' : `${st.settings.dockWidth}%`, ['--sidebar-w' as string]: `${railCollapsed || !st.rail.open ? 56 : st.settings.sidebarWidth}px` }}>
+      <Rail forceCollapsed={railCollapsed} />
+      <main className={'center' + (canvas ? ' has-canvas' : '')} key={st.page === 'session' ? session?.id ?? 'none' : st.page}>
         {st.page === 'settings' ? <SettingsPage /> : st.page === 'plugins' ? <PluginsPage /> : st.page === 'automations' ? <AutomationsPage /> : session && (
-          <>
-            <Header session={session} />
-            <Thread session={session} />
-            <Composer session={session} />
-          </>
+          <div className="center-split">
+            <div className="center-main">
+              <Header session={session} />
+              <Thread session={session} />
+              <Composer session={session} />
+            </div>
+            {canvas && st.canvasSplit && <CanvasPane session={session} artifact={canvas} width={st.canvasSplit} />}
+          </div>
         )}
         {!session && <div className="empty-thread">No session</div>}
       </main>

@@ -3,7 +3,7 @@ import {
   Layers, Play, Share2, Pin, PinOff, FileCode2, ChartColumn, AppWindow, FileText, Table2, TestTube2, GitCompare, Sparkles, Bot, Check, Loader2, AlertTriangle, Clock, Target, History, Globe, ArrowRight, SplitSquareHorizontal, Rows3, RotateCcw, ExternalLink, Camera, MousePointerClick, FileDiff, ListChecks,
 } from 'lucide-react';
 import { CHART_HTML } from '../agent/scenarios';
-import { focusCall, pinArtifact, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
+import { focusCall, openBesideChat, pinArtifact, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
 import type { Artifact, ArtifactKind, DiffInfo, Session, TLEvent, ToolCall } from '../state/types';
 import { AdhocBanner, Markdown } from './Markdown';
 import { clearAdhocPreview } from '../state/store';
@@ -58,6 +58,7 @@ export function ArtifactCard({ a, session, hero }: { a: Artifact; session: Sessi
       <div className="acard-actions" onClick={(e) => e.stopPropagation()}>
         <button className="chip-btn" onClick={open}>Open</button>
         {(a.kind === 'app' || a.kind === 'chart' || a.kind === 'code') && <button className="chip-btn" onClick={() => { setDockTab('preview'); toast(`Running ${a.title}`, 'info'); }}><Play size={11} />Run</button>}
+        {(a.html || a.kind === 'chart') && <button className="chip-btn" title="Show live beside the conversation" onClick={() => openBesideChat(session.id, a.id)}>⫶ Beside</button>}
         {a.added !== undefined && <button className="chip-btn" onClick={() => setDockTab('files')}><GitCompare size={11} />Compare</button>}
         <button className="chip-btn" onClick={() => toast('Share link created (demo)', 'success')}><Share2 size={11} /></button>
         <button className={'chip-btn' + (a.pinned ? ' on' : '')} onClick={() => pinArtifact(session.id, a.id)} title="Pin to Gallery">{a.pinned ? <PinOff size={11} /> : <Pin size={11} />}</button>

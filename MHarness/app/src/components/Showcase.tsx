@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, Pin, PinOff, ArrowRight, GitCompare, Play, Share2, Check, Sparkles, Minimize2, Maximize2, BellOff } from 'lucide-react';
-import { dismissShowcase, minimiseShowcase, pinArtifact, restoreFromTray, setDockTab, toast } from '../state/store';
+import { dismissShowcase, minimiseShowcase, openBesideChat, pinArtifact, restoreFromTray, setDockTab, toast } from '../state/store';
 import type { Artifact, Session, Turn } from '../state/types';
 import { useStore } from '../state/useStore';
 import { kindMeta, HtmlThumb } from './Dock';
@@ -62,6 +62,7 @@ function ShowcaseCard({ a, session, i }: { a: Artifact; session: Session; i: num
         </div>
         <div className="sc-actions">
           <button className="btn sm primary" onClick={() => setDockTab(a.kind === 'code' ? 'files' : 'preview')}>Open</button>
+          {(a.html || a.kind === 'chart') && <button className="btn sm ghost" title="Show it live beside the conversation" onClick={() => { openBesideChat(session.id, a.id); dismissShowcase(); }}>⫶ Beside chat</button>}
           {a.added !== undefined && <button className="btn sm ghost" onClick={() => setDockTab('files')}><GitCompare size={12} />Compare</button>}
           {(a.kind === 'app' || a.kind === 'chart') && <button className="btn sm ghost" onClick={() => { setDockTab('preview'); toast(`Re-running ${a.title} with the same inputs`, 'info'); }}><Play size={12} />{a.kind === 'chart' ? 'Re-run' : 'Run'}</button>}
           <button className="icon-btn sm" title="Share" onClick={() => toast('Share link created — expires in 30 days (demo)', 'success')}><Share2 size={13} /></button>

@@ -720,3 +720,21 @@ kbd { font-family: var(--mesa-type-sans); font-size: 10px; padding: 1px 5px; bor
 .tour-body kbd { font-size: 10px; }
 .tour-actions { display: flex; align-items: center; gap: 8px; }
 .tour-hint { margin-top: 8px; font-size: 10px; color: var(--mesa-text-muted); display: flex; gap: 4px; align-items: center; }
+/* ---------- canvas beside chat ---------- */
+.center-split { display: flex; flex: 1; min-height: 0; min-width: 0; }
+.center-main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.canvas-pane { position: relative; display: flex; flex-direction: column; min-width: 0; border-left: 1px solid var(--mesa-border-subtle); background: var(--mesa-bg-canvas); animation: canvasIn var(--mesa-m-slow) var(--mesa-e-out); }
+@keyframes canvasIn { from { opacity: 0; transform: translateX(16px); } }
+.canvas-resize { position: absolute; left: -4px; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 6; }
+.canvas-resize:hover { background: linear-gradient(90deg, transparent, var(--mesa-accent-soft)); }
+.canvas-head { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 12px; border-bottom: 1px solid var(--mesa-border-subtle); background: var(--mesa-bg-surface); font-size: 12px; }
+.kind-badge.inline { position: static; }
+.canvas-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.canvas-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.canvas-body iframe { flex: 1; width: 100%; border: 0; background: #0f1115; }
+.canvas-body .chart-frame { background: var(--mesa-bg-surface); }
+.canvas-body .doc-view { flex: 1; }
+.center.has-canvas .pill-model, .center.has-canvas .tm-label, .center.has-canvas .composer-hint, .center.has-canvas .preset-indicator { display: none; }
+.center.has-canvas .hdr { grid-template-columns: auto 1fr auto; }
+.center.has-canvas .thread-inner { padding: 16px 16px 16px; }
+.center.has-canvas .user-text { max-width: 90%; }
