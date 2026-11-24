@@ -1,5 +1,8 @@
-﻿nodeLinker: hoisted
+nodeLinker: hoisted
 shamefullyHoist: true
+confirmModulesPurge: false
+# pnpm 10.14+/11: explicit build-script approval (esbuild's postinstall only validates its binary).
+allowBuilds:
+  esbuild: true
 onlyBuiltDependencies:
   - esbuild
-
