@@ -1,12 +1,26 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { seed, getState, renameSession, closeCanvas, closePublish, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
+import { seed, getState, renameSession, closeCanvas, closePublish, openPage, setActive, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
 import { resolveShortcutEvent } from './state/shortcuts';
 import './styles/tokens.css';
 import './styles/app.css';
 
 async function boot() {
   await seed();
+  // Deep links: #/s/<session>/<tab> (or #/<page>) restore the active session and dock tab; the URL is kept in sync (no history spam).
+  const applyHash = () => {
+    const m = /^#\/s\/([\w-]+)(?:\/(\w+))?/.exec(location.hash);
+    if (m) { const st = getState(); if (st.sessions.some((s) => s.id === m[1])) { setActive(m[1]); if (m[2] && DOCK_TABS.some((t) => t.id === m[2])) setDockTab(m[2] as typeof DOCK_TABS[number]['id']); return; } }
+    const p = /^#\/(settings|plugins|automations)/.exec(location.hash); if (p) openPage(p[1] as 'settings');
+  };
+  applyHash();
+  window.addEventListener('hashchange', applyHash);
+  let lastUrl = '';
+  import('./state/store').then(({ subscribe }) => subscribe(() => {
+    const s = getState(); const session = s.sessions.find((x) => x.id === s.activeSessionId);
+    const next = s.page === 'session' && session ? `#/s/${session.id}/${s.dock.tab}` : `#/${s.page}`;
+    if (next !== lastUrl) { lastUrl = next; history.replaceState(null, '', next); }
+  }));
   createRoot(document.getElementById('root')!).render(<App />);
   // Live document title: "● working · <session> — Mesa" while the agent runs.
   let lastTitle = '';

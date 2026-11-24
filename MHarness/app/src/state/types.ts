@@ -154,7 +154,7 @@ export interface Session {
 export type DockTab = 'artifacts' | 'run' | 'preview' | 'files' | 'agents' | 'stats' | 'timeline' | 'browser';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-export interface Toast { id: Id; text: string; kind: 'info' | 'success' | 'warning' | 'error'; at: number; icon?: string }
+export interface Toast { id: Id; text: string; kind: 'info' | 'success' | 'warning' | 'error'; at: number; icon?: string; action?: { label: string; run: () => void }; ttlMs?: number }
 export interface TrayItem { id: Id; title: string; subtitle: string; sessionId: string; turnId: string; kind: 'showcase' }
 export interface Settings {
   theme: ThemeMode;

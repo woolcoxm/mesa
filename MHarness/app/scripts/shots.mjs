@@ -82,6 +82,10 @@ await shot('07-agents-board');
 await page.locator('.seg button:has-text("Tree")').click();
 await page.keyboard.press('Control+7'); await page.waitForTimeout(500);
 await shot('08-timeline');
+// 24 — stats with the token sparkline
+await page.keyboard.press('Control+6'); await page.waitForTimeout(600);
+await shot('24-stats-sparkline');
+await page.keyboard.press('Control+7');
 
 // 09 — gallery
 await page.keyboard.press('Control+Shift+g'); await page.waitForTimeout(500);

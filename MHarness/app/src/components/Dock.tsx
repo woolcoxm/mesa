@@ -178,6 +178,7 @@ export function StatsTab({ session }: { session: Session }) {
   return (
     <div className="tab-scroll">
       <div className="tab-head"><b>Stats</b><span className="muted">per turn</span></div>
+      <Sparkline values={rows.map((t) => t.usage.inputTokens + t.usage.outputTokens)} labels={rows.map((t) => t.user.slice(0, 40))} />
       <div className="stat-cards">
         <div className="stat"><span>Context</span><b>{session.tokens.toLocaleString()}</b><i>/ {session.contextMax.toLocaleString()}</i></div>
         <div className="stat"><span>Cache hit</span><b>{Math.round(session.cacheHit * 100)} %</b></div>
@@ -193,6 +194,10 @@ export function StatsTab({ session }: { session: Session }) {
 }
 
 const TL_ICON: Record<TLEvent['kind'], typeof History> = { turn: ArrowRight, tool: Sparkles, run: Play, approval: AlertTriangle, artifact: FileCode2, checkpoint: RotateCcw, present: Layers };
+function Sparkline({ values, labels }: { values: number[]; labels: string[] }) {
+  const max = Math.max(1, ...values);
+  return <div className="spark" aria-label="Tokens per turn">{values.map((v, i) => <div key={i} className="spark-bar" title={labels[i] + ' · ' + v.toLocaleString() + ' tokens'} style={{ height: Math.max(6, (v / max) * 100) + '%' }} />)}</div>;
+}
 export function TimelineTab({ session }: { session: Session }) {
   const maxMs = Math.max(1, ...session.timeline.map((e) => e.ms ?? 0));
   return (

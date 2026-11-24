@@ -139,11 +139,11 @@ function updateCall(sessionId: Id, turnId: Id, blockId: Id, fn: (c: ToolCall) =>
 function pushTimeline(sessionId: Id, e: Omit<TLEvent, 'id' | 'ts'>) {
   updateSession(sessionId, (s) => { s.timeline = [...s.timeline, { ...e, id: uid(), ts: Date.now() }]; });
 }
-export function toast(text: string, kind: Toast['kind'] = 'info', icon?: string) {
-  const t: Toast = { id: uid(), text, kind, at: Date.now(), icon };
+export function toast(text: string, kind: Toast['kind'] = 'info', icon?: string, action?: Toast['action'], ttlMs?: number) {
+  const t: Toast = { id: uid(), text, kind, at: Date.now(), icon, action, ttlMs };
   state = { ...state, toasts: [...state.toasts, t] };
   emit();
-  setTimeout(() => { state = { ...state, toasts: state.toasts.filter((x) => x.id !== t.id) }; emit(); }, 4200);
+  setTimeout(() => { state = { ...state, toasts: state.toasts.filter((x) => x.id !== t.id) }; emit(); }, ttlMs ?? 4200);
 }
 export function dismissToast(id: Id) { state = { ...state, toasts: state.toasts.filter((t) => t.id !== id) }; emit(); }
 
@@ -245,11 +245,14 @@ export function openAdhocPreview(title: string, html: string) { state = { ...sta
 export function clearAdhocPreview() { state = { ...state, adhoc: null }; emit(); }
 export function deleteSession(id: Id) {
   const wasActive = state.activeSessionId === id;
+  const index = state.sessions.findIndex((s) => s.id === id);
+  const removed = state.sessions[index];
+  if (!removed) return;
   const sessions = state.sessions.filter((s) => s.id !== id);
   if (!sessions.length) sessions.unshift(newSession({ title: 'New session' }));
-  state = { ...state, sessions, activeSessionId: wasActive ? sessions[0].id : state.activeSessionId, showcase: state.showcase?.sessionId === id ? null : state.showcase, tray: state.tray.filter((t) => t.sessionId !== id) };
+  state = { ...state, sessions, activeSessionId: wasActive ? sessions[0].id : state.activeSessionId, showcase: state.showcase?.sessionId === id ? null : state.showcase, tray: state.tray.filter((t) => t.sessionId !== id), canvasArtifact: state.canvasArtifact?.sessionId === id ? null : state.canvasArtifact };
   emit();
-  toast('Session deleted', 'info');
+  toast('Session deleted', 'info', undefined, { label: 'Undo', run: () => { state = { ...state, sessions: [...state.sessions.slice(0, index), removed, ...state.sessions.slice(index)] }; emit(); } }, 7000);
 }
 export function notify(title: string, body: string) {
   if (!state.settings.notifications) return;

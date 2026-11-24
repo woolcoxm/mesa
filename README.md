@@ -46,8 +46,10 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | **Guided tour** — an animated spotlight walks through the shell on first run; replay from Settings or the palette. | **Accent colours** — six palettes re-tint buttons, cursors, charts and the showcase in both themes. |
 | ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | ![Publish with preflight](docs/screenshots/21-publish.png) |
 | **Canvas beside chat** — "Beside chat" on any app, chart or notebook deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | **Publish with preflight** — Share on an HTML deliverable scans it first (private keys, `sk-…`/AWS/GitHub/Stripe tokens, hard-coded secrets, source maps, untrusted external scripts, localhost links), refuses anything with a blocking finding, and otherwise serves it from your Mesa server at a copyable link you can open or remove. |
-| ![Notebook beside chat](docs/screenshots/22-notebook-beside.png) | ![Real shell approval](docs/screenshots/15-real-shell-approval.png) |
-| **Notebook renderer** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (text, images, HTML in a sandboxed frame); "Convert to script" downloads the code cells. | **Real shell for live agents** — an agent's `bash` call runs for real on the machine hosting Mesa (`cmd.exe` on Windows, `$SHELL` elsewhere), confined to the repo and always behind the approval takeover. |
+| ![Notebook beside chat](docs/screenshots/22-notebook-beside.png) | ![Stats with token sparkline](docs/screenshots/24-stats-sparkline.png) |
+| **Notebook renderer** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (text, images, HTML in a sandboxed frame); "Convert to script" downloads the code cells. | **Stats** — context, cache hit, cost (estimated from list pricing when the model is known) and a per-turn token sparkline with hover tooltips; the timeline tab shows every event's timing. |
+
+Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands.
 
 > Every screenshot above is regenerated from a deterministic demo run with `pnpm shots` (headless Chromium), so the pictures always match the current build.
 

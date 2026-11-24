@@ -798,3 +798,9 @@ body.show-keys [data-key] { position: relative; }
 body.show-keys [data-key]::after { content: attr(data-key); position: absolute; top: -9px; right: -9px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 6px; background: var(--mesa-accent); color: #fff; font-family: var(--mesa-type-mono); font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 2px 10px var(--mesa-accent-glow); animation: pop var(--mesa-m-fast) var(--mesa-e-spring); pointer-events: none; z-index: 40; }
 body.show-keys .dock-tab[data-key]::after { top: -7px; right: -4px; }
 body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
+/* ---------- drop target + token sparkline ---------- */
+.composer.drag-over { border-color: var(--mesa-accent); box-shadow: 0 0 0 4px var(--mesa-accent-soft), var(--mesa-e2); }
+.composer.drag-over .composer-input::placeholder { color: var(--mesa-accent); }
+.spark { display: flex; gap: 3px; align-items: flex-end; height: 56px; margin: 0 14px 10px; padding: 6px 10px; border-radius: var(--mesa-r-md); background: var(--mesa-bg-sunken); }
+.spark-bar { flex: 1; min-width: 4px; background: linear-gradient(180deg, var(--mesa-accent), var(--mesa-info)); border-radius: 3px 3px 0 0; animation: growBar .6s var(--mesa-e-out) both; transform-origin: bottom; }
+.spark-bar:hover { filter: brightness(1.2); }

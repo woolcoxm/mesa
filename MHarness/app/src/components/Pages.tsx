@@ -13,7 +13,7 @@ export function Toasts() {
   const st = useStore();
   return (
     <div className="toasts" aria-live="polite">
-      {st.toasts.map((t) => { const Icon = ICON[t.kind]; return <div key={t.id} className={'toast t-' + t.kind}><Icon size={14} /><span>{t.text}</span><button className="icon-btn sm" onClick={() => dismissToast(t.id)} aria-label="Dismiss"><X size={12} /></button></div>; })}
+      {st.toasts.map((t) => { const Icon = ICON[t.kind]; return <div key={t.id} className={'toast t-' + t.kind}><Icon size={14} /><span>{t.text}</span>{t.action && <button className="chip-btn on" onClick={() => { t.action!.run(); dismissToast(t.id); }}>{t.action.label}</button>}<button className="icon-btn sm" onClick={() => dismissToast(t.id)} aria-label="Dismiss"><X size={12} /></button></div>; })}
     </div>
   );
 }

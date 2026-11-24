@@ -1,7 +1,7 @@
 import { sc } from '../state/platform';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, ArrowUpToLine, CornerDownLeft, Paperclip, AtSign, Slash, X, ShieldAlert, ShieldCheck, CircleStop, ListChecks, Check, ChevronDown, Sparkles, AlertTriangle, Clock } from 'lucide-react';
-import { cancelTurn, clearInsert, decide, dequeue, flushQueue, send, setDockTab, toast, togglePalette } from '../state/store';
+import { cancelTurn, clearInsert, decide, dequeue, flushQueue, openAdhocPreview, send, setDockTab, toast, togglePalette } from '../state/store';
 import { useStore } from '../state/useStore';
 import type { Approval, Session } from '../state/types';
 
@@ -18,6 +18,17 @@ const FILES = ['mesa-demo/src/App.tsx', 'mesa-demo/src/styles.css', 'mesa-demo/s
 export function Composer({ session }: { session: Session }) {
   const [text, setText] = useState('');
   const [menu, setMenu] = useState<'slash' | 'file' | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (!files.length) { const text = e.dataTransfer.getData('text/plain'); if (text) setText((t) => t + text); return; }
+    const runnable = files.find((f) => /\.(html?|svg)$/i.test(f.name));
+    const names = files.map((f) => '@' + f.name).join(' ');
+    setText((t) => (t ? t + ' ' : '') + names + ' ');
+    toast(`Attached ${files.length} file${files.length === 1 ? '' : 's'}${runnable ? ` — opening ${runnable.name} in the preview` : ''}`, 'success');
+    runnable?.text().then((html) => openAdhocPreview(runnable.name, /\.svg$/i.test(runnable.name) ? `<!doctype html><html><body style="margin:0;background:var(--mesa-bg-surface);display:grid;place-items:center;height:100vh">${html}</body></html>` : html));
+  };
   const ta = useRef<HTMLTextAreaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const live = session.state === 'running' || session.state === 'awaiting';
@@ -75,7 +86,7 @@ export function Composer({ session }: { session: Session }) {
         </div>
       )}
       {session.pendingApproval ? <ApprovalTakeover session={session} approval={session.pendingApproval} draft={text} /> : (
-        <div className={'composer' + (menu ? ' has-menu' : '')}>
+        <div className={'composer' + (menu ? ' has-menu' : '') + (dragOver ? ' drag-over' : '')} onDragOver={(e) => { if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('text/plain')) { e.preventDefault(); setDragOver(true); } }} onDragLeave={() => setDragOver(false)} onDrop={onDrop}>
           {menu === 'slash' && <div className="composer-menu">{filteredSlash.map((s) => <button key={s.cmd} onClick={() => { setText(s.cmd + ' '); setMenu(null); ta.current?.focus(); }}><b>{s.cmd}</b><span>{s.desc}</span></button>)}</div>}
           {menu === 'file' && <div className="composer-menu">{filteredFiles.length ? filteredFiles.map((f) => <button key={f} onClick={() => { setText(text.slice(0, text.length - lastWord.length) + '@' + f + ' '); setMenu(null); ta.current?.focus(); }}><AtSign size={12} /><span>{f}</span></button>) : <div className="menu-empty">No matching files</div>}</div>}
           <div className="composer-toolbar">

@@ -4,6 +4,12 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+- **Undo** for deleted sessions (7-second toast action).
+- **Drag and drop** files onto the composer to attach them; dropped HTML/SVG files open directly in the preview.
+- **URL routing** — #/s/<session>/<tab> deep links restore the active session and dock tab on reload or from a bookmark.
+- Palette commands for accent colours and density; **token sparkline** in Stats; cost estimates marked as estimated or unpriced.
+
 ## [0.2.0] — 2026-11-24
 
 ### Added

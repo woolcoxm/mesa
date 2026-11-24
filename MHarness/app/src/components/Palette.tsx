@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, Moon, Sun, PanelRight, Layers, BellOff, PanelLeft, Sparkles, AppWindow, ChartColumn, TestTube2, GitBranch, Keyboard, Settings, Puzzle, CalendarClock, Cpu, Zap, Command } from 'lucide-react';
 import { exportSession, newSessionAction, openPage, send, setDockTab, setMode, toggleDock, toggleGallery, togglePalette, toggleRail, updateSettings, DOCK_TABS, setActive } from '../state/store';
 import { useStore } from '../state/useStore';
+import { ACCENTS } from '../state/platform';
 
 type Cmd = { id: string; t: string; k: string; icon: typeof Plus; run: () => void; disabled?: boolean; indent?: boolean };
 
@@ -29,6 +30,8 @@ export function Palette() {
       ...DOCK_TABS.map((t) => ({ id: 'tab-' + t.id, t: 'Open · ' + t.label, k: sc('Ctrl+' + t.key), icon: t.id === 'preview' ? AppWindow : t.id === 'agents' ? GitBranch : t.id === 'stats' ? Cpu : t.id === 'run' ? Zap : Sparkles, run: () => setDockTab(t.id) })),
       { id: 'settings', t: 'Open Settings', k: '', icon: Settings, run: () => openPage('settings') },
       { id: 'tour', t: 'Replay the guided tour', k: '', icon: Sparkles, run: () => startTour() },
+      ...ACCENTS.map((a) => ({ id: 'accent-' + a.id, t: 'Accent · ' + a.name, k: '', icon: Sparkles, run: () => updateSettings({ accent: a.id }) })),
+      ...(['comfortable', 'compact', 'terminal'] as const).map((d) => ({ id: 'density-' + d, t: 'Density · ' + d, k: '', icon: Sparkles, run: () => updateSettings({ density: d }) })),
       { id: 'plugins', t: 'Open Plugins & Skills', k: '', icon: Puzzle, run: () => openPage('plugins') },
       { id: 'autos', t: 'Open Automations', k: '', icon: CalendarClock, run: () => openPage('automations') },
     ];
