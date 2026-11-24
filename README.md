@@ -44,8 +44,10 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | **Narrow layout** — the rail collapses to icons under 960 px and the dock is capped, so the thread stays usable on a laptop. | **Timeline** — every event with timing bars; click an event to flash its tool row in the thread; checkpoints are restorable. |
 | ![Guided tour](docs/screenshots/18-tour.png) | ![Accent colours](docs/screenshots/17-accent-rose.png) |
 | **Guided tour** — an animated spotlight walks through the shell on first run; replay from Settings or the palette. | **Accent colours** — six palettes re-tint buttons, cursors, charts and the showcase in both themes. |
-| ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | |
-| **Canvas beside chat** — "Beside chat" on any app or chart deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | |
+| ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | ![Publish with preflight](docs/screenshots/21-publish.png) |
+| **Canvas beside chat** — "Beside chat" on any app or chart deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | **Publish with preflight** — Share on an HTML deliverable scans it first (private keys, `sk-…`/AWS/GitHub/Stripe tokens, hard-coded secrets, source maps, untrusted external scripts, localhost links), refuses anything with a blocking finding, and otherwise serves it from your Mesa server at a copyable link you can open or remove. |
+
+> Every screenshot above is regenerated from a deterministic demo run with `pnpm shots` (headless Chromium), so the pictures always match the current build.
 
 ---
 
@@ -146,13 +148,15 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests, on **Ubuntu, macOS and Windows**: install → typecheck → build → `scripts/smoke.mjs`, which boots the server with the real shell enabled and verifies the app, the shell status, a quoted command, exit-code propagation, the workspace boundary and the offline mock.
 
-The UI was verified with a scripted Playwright pass (~140 checks across every screen and control), capturing `pageerror` as the crash signal and reviewing screenshots of each state. Coverage includes: boot and persistence (including corrupted and old-schema storage), rail actions (search, collapse, rename, delete, delete-all), header menus and cycling, composer (`@`, `/`, attach, queue/inject/stop/flush), approval decisions (Esc, Alt+R with reason, always-allow, cancel-from-takeover), showcase behaviours (pin-all, minimise/restore, DND, deleting the showcased session), run console (typing, `clear`, Ctrl+C, kill/restart/notify, shortcuts from terminal focus), preview (device sizes, console/network, screenshot-to-chat, ad-hoc run), files/diffs, agents, stats, timeline, browser tab, gallery (filter, search, compare, re-run), palette, exports, provider edge cases (unreachable/malformed URLs, stale responses), markdown/XSS injection, the real shell (approval → real `ls` output → exit code in the console), extreme viewports, and drag-resize of both sidebars.
+**Screenshots** — `pnpm shots` (after `npx playwright install chromium` once) replays a deterministic demo in headless Chromium and rewrites every image in `docs/screenshots/`, so the README never drifts from the UI.
+
+**UI verification** — a scripted Playwright pass (~140 checks across every screen and control), capturing `pageerror` as the crash signal and reviewing screenshots of each state. Coverage includes: boot and persistence (including corrupted and old-schema storage), rail actions (search, collapse, rename, delete, delete-all), header menus and cycling, composer (`@`, `/`, attach, queue/inject/stop/flush), approval decisions (Esc, Alt+R with reason, always-allow, cancel-from-takeover), showcase behaviours (pin-all, minimise/restore, DND, deleting the showcased session), run console (typing, `clear`, Ctrl+C, kill/restart/notify, shortcuts from terminal focus), preview (device sizes, console/network, screenshot-to-chat, ad-hoc run), files/diffs, agents, stats, timeline, browser tab, gallery (filter, search, compare, re-run), palette, exports, provider edge cases (unreachable/malformed URLs, stale responses), markdown/XSS injection, the real shell (approval → real `ls` output → exit code in the console), publish preflight (clean page publishes; embedded secrets refused with 422), extreme viewports, drag-resize of both sidebars, and the editable shortcut table (rebind, conflict rejection, reset).
 
 ---
 
 ## Roadmap
 
-Persistence beyond the browser (SQLite), a real shell tool for live agents, notebooks and canvas renderers, publish with preflight checks, ACP bridge for external agents, and a keyboard-shortcut editor. The full 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped so far: real shell for live agents (#7), guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), cross-platform CI with a real-shell smoke test. Still planned: SQLite persistence + full-text search (#1), notebook and canvas renderers (#3), ACP bridge for external agents (#5), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## License
 

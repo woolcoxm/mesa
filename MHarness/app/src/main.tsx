@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { seed, getState, renameSession, closeCanvas, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
+import { seed, getState, renameSession, closeCanvas, closePublish, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
 import { resolveShortcutEvent } from './state/shortcuts';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -27,6 +27,7 @@ async function boot() {
     const st = getState();
     const session = st.sessions.find((s) => s.id === st.activeSessionId);
     if (e.code === 'Escape') {
+      if (st.publish) return closePublish();
       if (st.palette.open) return togglePalette(false);
       if (st.gallery.open) return toggleGallery(false);
       if (session?.pendingApproval) return; // the approval takeover owns Esc (deny flow)

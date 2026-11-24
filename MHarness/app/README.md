@@ -9,12 +9,13 @@ Works on Windows, macOS and Linux with Node ≥ 18.
 ```bash
 pnpm install            # hoisted linker + esbuild build approval live in pnpm-workspace.yaml
 pnpm build              # vite build → dist/
-pnpm serve              # zero-dependency static server + model proxy + offline mock → http://127.0.0.1:5173
+pnpm serve              # zero-dependency static server + model proxy + offline mock + publish → http://127.0.0.1:5173
 pnpm typecheck          # tsc --noEmit
 pnpm smoke              # boots serve.mjs with the real shell and checks it (same as CI)
+pnpm shots              # regenerates every README screenshot (needs `npx playwright install chromium` once)
 ```
 
-`pnpm dev` (Vite dev server with HMR) also works, but `scripts/serve.mjs` is what hosts the model proxy (`/proxy`), the bootstrap config (`/__mesa/config`), the real shell (`/__mesa/run`, opt-in) and the offline mock model (`/__mesa/mock`). In sandboxed shells Vite's build needs esbuild to spawn a child process; run the build with wider permissions once, then serve `dist/` with `pnpm serve`.
+`pnpm dev` (Vite dev server with HMR) also works, but `scripts/serve.mjs` is what hosts the model proxy (`/proxy`), the bootstrap config (`/__mesa/config`), the real shell (`/__mesa/run`, opt-in), the offline mock model (`/__mesa/mock`) and publish links (`/__mesa/publish` → `/published/<id>.html`). In sandboxed shells Vite's build needs esbuild to spawn a child process; run the build with wider permissions once, then serve `dist/` with `pnpm serve`.
 
 ## Configuration
 

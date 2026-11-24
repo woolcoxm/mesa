@@ -190,4 +190,5 @@ export interface AppState {
   adhoc: { title: string; html: string } | null;
   focus: { callId: Id; n: number } | null;
   tour: number | null;
+  publish: { sessionId: Id; artifactId: Id } | null;
 }

@@ -12,6 +12,7 @@ import { Toasts, SettingsPage, PluginsPage, AutomationsPage } from './components
 import { Confetti } from './components/Confetti';
 import { Tour } from './components/Tour';
 import { CanvasPane } from './components/CanvasPane';
+import { PublishDialog } from './components/PublishDialog';
 import { useNarrow, useStore } from './state/useStore';
 import { applyAccent } from './state/platform';
 import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette } from './state/store';
@@ -70,6 +71,7 @@ export function App() {
       <Showcase />
       <Confetti />
       <Tour />
+      <PublishDialog />
       <TrayStack />
       <Toasts />
       <Palette />

@@ -3,6 +3,7 @@ import { X, Search, Pin, Layers, GitCompare, RotateCcw, Share2, Sparkles, Tag, A
 import { getState, setGalleryFilter, toggleGallery, toast } from '../state/store';
 import { useStore } from '../state/useStore';
 import { kindMeta, HtmlThumb } from './Dock';
+import { openPublish } from '../state/store';
 import { Markdown } from './Markdown';
 import type { Artifact } from '../state/types';
 
@@ -34,7 +35,7 @@ export function Gallery() {
             <div className="gd-head"><b>{sel.a.title}</b><span className="muted">{sel.a.path} · {sel.s.title}</span><span className="spacer" />
               <select value={g.compareWith ?? ''} onChange={(e) => setGalleryFilter({ compareWith: e.target.value || undefined })} aria-label="Compare with"><option value="">Compare with…</option>{items.filter((i) => i.a.path === sel.a.path && i.a.id !== sel.a.id).map((i) => <option key={i.a.id} value={i.a.id}>{i.s.title}</option>)}</select>
               <button className="chip-btn" onClick={() => toast(`Re-running ${sel.a.title} with fresh inputs (demo)`, 'info')}><RotateCcw size={11} />Re-run with fresh inputs</button>
-              <button className="chip-btn" onClick={() => toast('Read-only link created — expires in 30 days (demo)', 'success')}><Share2 size={11} />Share</button></div>
+              <button className="chip-btn" onClick={() => sel.a.html ? openPublish(sel.s.id, sel.a.id) : toast('Publishing is for HTML artifacts', 'info')}><Share2 size={11} />Publish</button></div>
             <div className={'gd-body' + (compare ? ' split' : '')}>
               <div className="gd-pane">{sel.a.kind === 'chart' && sel.a.chart ? <ChartPane a={sel.a} /> : sel.a.kind === 'app' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={sel.a.html ?? ''} /> : sel.a.code ? <Markdown text={'```' + (sel.a.kind === 'markdown' ? 'md' : sel.a.kind === 'table' ? 'json' : 'ts') + '\n' + sel.a.code + '\n```'} /> : <div className="thumb-blank" />}<div className="gd-caption">{compare ? 'Current' : ''}</div></div>
               {compare && <div className="gd-pane">{compare.a.html ? <iframe title="compare" sandbox="allow-scripts" srcDoc={compare.a.html} /> : <Markdown text={'```ts\n' + (compare.a.code ?? '') + '\n```'} />}<div className="gd-caption">Previous version · {compare.s.title}</div></div>}

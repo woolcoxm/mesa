@@ -69,6 +69,7 @@ const initial: AppState = {
   adhoc: null,
   focus: null,
   tour: null,
+  publish: null,
 };
 
 let state: AppState = initial;
@@ -224,6 +225,8 @@ export function setCheckpoint(sessionId: Id, label: string, auto = false) {
 
 export function insertIntoComposer(text: string) { state = { ...state, insert: { text, n: Date.now() } }; emit(); }
 export function clearInsert() { if (state.insert) { state = { ...state, insert: null }; } }
+export function openPublish(sessionId: Id, artifactId: Id) { state = { ...state, publish: { sessionId, artifactId } }; emit(); }
+export function closePublish() { state = { ...state, publish: null }; emit(); }
 export function setTour(step: number | null) { state = { ...state, tour: step }; emit(); }
 export function isLiveAgent() { const p = state.settings.provider; return state.settings.agent === 'live' && !!p?.baseUrl && (!!p.apiKey || p.preset === 'mock'); }
 export function focusCall(callId: Id) { state = { ...state, focus: { callId, n: Date.now() } }; emit(); }

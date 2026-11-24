@@ -1,6 +1,6 @@
 // Zero-dependency static server for the built app + a tiny dev proxy for model endpoints + an optional real shell for live agents.
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +30,9 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/__mesa/allow') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify([...allow])); }
   if (url.pathname === '/__mesa/shell') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); return res.end(JSON.stringify({ enabled: shellEnabled, root: workspaceRoot })); }
   if (url.pathname === '/__mesa/run') return runShell(req, res);
+  if (url.pathname === '/__mesa/publish' && req.method === 'POST') return publish(req, res);
+  if (url.pathname === '/__mesa/published') return listPublished(res);
+  if (url.pathname.startsWith('/__mesa/publish/') && req.method === 'DELETE') return unpublish(url, res);
   if (url.pathname === '/__mesa/config') {
     // Local-only bootstrap config (mesa.config.json next to package.json). Served only to this origin.
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -103,6 +106,53 @@ async function runShell(req, res) {
   child.on('error', (e) => { clearTimeout(timer); send({ type: 'line', stream: 'stderr', line: `mesa: ${e.message}` }); send({ type: 'exit', code: -1 }); res.end(); });
   child.on('close', (code) => { clearTimeout(timer); send({ type: 'exit', code: code ?? -1 }); res.end(); });
   req.on('close', () => { if (child.exitCode === null) child.kill(); });
+}
+
+// ---------- publish: preflight + static hosting under dist/published ----------
+const publishedDir = join(root, 'published');
+const SECRET_PATTERNS = [
+  ['Private key block', /-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/],
+  ['AWS access key', /\bAKIA[0-9A-Z]{16}\b/],
+  ['OpenAI-style secret', /\bsk-[A-Za-z0-9_-]{20,}\b/],
+  ['GitHub token', /\bgh[pousr]_[A-Za-z0-9]{30,}\b/],
+  ['Assigned secret/assignment in script', /(api[_-]?key|secret|password|token)\s*[:=]\s*["'][^"']{8,}["']/i],
+  ['Stripe key', /\b[sr]k_live_[A-Za-z0-9]{20,}\b/],
+];
+function preflight(html) {
+  const issues = [];
+  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map((m) => m[1]).join('\n');
+  for (const [label, re] of SECRET_PATTERNS) if (re.test(scripts) || re.test(html)) issues.push({ level: 'error', label });
+  if (/sourceMappingURL=/.test(html)) issues.push({ level: 'warn', label: 'Source map reference' });
+  if (/\.env\b/.test(html)) issues.push({ level: 'warn', label: 'Mentions a .env file' });
+  const external = [...html.matchAll(/<script[^>]+src=["'](https?:\/\/[^"']+)/gi)].map((m) => m[1]);
+  const ALLOWED_CDN = ['cdn.jsdelivr.net', 'unpkg.com', 'cdnjs.cloudflare.com', 'esm.sh', 'cdn.skypack.dev'];
+  for (const src of external) { let host = ''; try { host = new URL(src).hostname; } catch { /* ignore */ } if (!ALLOWED_CDN.includes(host)) issues.push({ level: 'warn', label: `External script: ${src}` }); }
+  if (/localhost:\d+/.test(html)) issues.push({ level: 'warn', label: 'Links to localhost' });
+  return issues;
+}
+async function publish(req, res) {
+  const chunks = []; for await (const c of req) chunks.push(c);
+  let body; try { body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); } catch { res.writeHead(400); return res.end('bad json'); }
+  const html = String(body.html ?? ''); const title = String(body.title ?? 'artifact').slice(0, 80);
+  if (!html.trim() || html.length > 2_000_000) { res.writeHead(400); return res.end('empty or too large'); }
+  const issues = preflight(html);
+  if (issues.some((i) => i.level === 'error')) { res.writeHead(422, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ issues })); }
+  await mkdir(publishedDir, { recursive: true });
+  const id = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'artifact'}-${Date.now().toString(36)}`;
+  await writeFile(join(publishedDir, `${id}.html`), html);
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify({ id, url: `/published/${id}.html`, issues }));
+}
+async function listPublished(res) {
+  let files = []; try { files = (await readdir(publishedDir)).filter((f) => f.endsWith('.html')); } catch { /* none */ }
+  res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+  res.end(JSON.stringify(files.map((f) => ({ id: f.replace(/\.html$/, ''), url: `/published/${f}` })).sort().reverse()));
+}
+async function unpublish(url, res) {
+  const id = url.pathname.split('/').pop();
+  if (!/^[\w-]+$/.test(id)) { res.writeHead(400); return res.end('bad id'); }
+  await rm(join(publishedDir, `${id}.html`), { force: true });
+  res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true }));
 }
 
 async function proxy(req, res, url) {
