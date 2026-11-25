@@ -209,7 +209,7 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Roadmap
 
-Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Also shipped as experimental: the **desktop shell** (#6, Electron; native PTYs still to come). Still planned: SQLite + FTS5 for large histories (#1), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Also shipped as experimental: the **desktop shell** (#6, Electron; native PTYs still to come). Persistence (#1) is delivered by the workspace state file plus in-app full-text search; SQLite only becomes necessary for histories larger than the browser should hold. Still planned: public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## Changelog & license
 

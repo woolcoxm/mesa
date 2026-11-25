@@ -4,6 +4,9 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Changed
+- Toasts anchor just above the composer (tracking its height) instead of under the header, so they never cover the showcase title or the composer controls.
+
 ## [0.3.0] — 2026-11-24
 
 ### Added
