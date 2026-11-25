@@ -140,28 +140,7 @@ function ShellRow() {
   );
 }
 
-const PLUGINS = [
-  { id: 'mesa.run', name: 'Run console', desc: 'PTY terminals, background jobs, inline Run cards', on: true, builtin: true },
-  { id: 'mesa.preview', name: 'Preview', desc: 'Sandboxed iframe preview with console + network capture', on: true, builtin: true },
-  { id: 'mesa.showcase', name: 'Showcase', desc: 'Completion window, deliverable cards, Gallery', on: true, builtin: true },
-  { id: 'mesa.test-runner', name: 'Test runner', desc: 'Detects vitest / pytest and renders pass/fail trees', on: true },
-  { id: 'mesa.browser', name: 'Browser', desc: 'Playwright-driven browser tab with per-workspace storage', on: true },
-  { id: 'mesa.charts', name: 'Canvases & charts', desc: 'Agent-authored interactive views, re-runnable', on: true },
-  { id: 'mesa.notebooks', name: 'Notebooks', desc: 'Cell-by-cell execution with a bundled Python kernel', on: false },
-  { id: 'mesa.publish', name: 'Publish', desc: 'Preflight secrets scan, share links, expiry', on: false },
-  { id: 'mesa.acp', name: 'ACP bridge', desc: 'Embed Claude Code, Codex or Gemini CLI as a session backend', on: false },
-];
-export function PluginsPage() {
-  const [plugins, setPlugins] = useState(PLUGINS);
-  return (
-    <div className="page">
-      <div className="page-head"><Puzzle size={16} /><b>Plugins & Skills</b><span className="muted">{plugins.filter((p) => p.on).length} enabled</span></div>
-      <div className="plugin-list">{plugins.map((p) => <div key={p.id} className={'plugin' + (p.on ? ' on' : '')}><span className="plugin-icon"><Sparkles size={14} /></span><div><b>{p.name}</b>{p.builtin && <span className="tag">built-in</span>}<div className="set-sub">{p.desc}</div></div><button className={'switch' + (p.on ? ' on' : '')} role="switch" aria-checked={p.on} onClick={() => setPlugins((ps) => ps.map((x) => (x.id === p.id ? { ...x, on: !x.on } : x)))}><i /></button></div>)}</div>
-      <div className="page-head" style={{ marginTop: 24 }}><Sparkles size={16} /><b>Skills</b></div>
-      <div className="set-sub" style={{ padding: '0 24px 24px' }}>Skills are markdown bundles loaded from <code>.mesa/skills/</code>. A skill can also ship a canvas theme.</div>
-    </div>
-  );
-}
+export { PluginsPage } from './PluginsPage';
 
 const AUTOS = [
   { id: 'a1', name: 'Nightly test run', rrule: 'Every weekday · 09:00 America/New_York', target: 'New session', last: 'today 09:00 · ok', on: true },

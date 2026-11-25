@@ -6,7 +6,7 @@ import { pickScenario, SEED_PLAN, type ArtifactSeed, type SceneStep, type Scenar
 import { estimateCostUsd, extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
 import { acpCancel, runAcpPrompt } from '../agent/acp';
 import { runNotebookCells as runNotebookCellsOnServer } from '../agent/notebook';
-import type { Automation } from './types';
+import type { Automation, Skill } from './types';
 
 export const uid = (): Id => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -64,7 +64,7 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [] },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [], skills: [], plugins: {} },
   canvasSplit: null,
   canvasArtifact: null,
   insert: null,
@@ -341,6 +341,14 @@ export function runAutomationNow(id: Id) {
   updateSettings({ automations: state.settings.automations.map((x) => (x.id === id ? { ...x, lastRunAt: Date.now(), lastSessionId: session!.id, nextRunAt: x.on ? Date.now() + x.everyMin * 60_000 : undefined } : x)) });
   toast(`Automation · ${a.name} started`, 'info');
 }
+export function upsertSkill(input: { id?: Id; name: string; prompt: string }) {
+  const list = state.settings.skills;
+  if (input.id && list.some((s) => s.id === input.id)) updateSettings({ skills: list.map((s) => (s.id === input.id ? { ...s, name: input.name, prompt: input.prompt } : s)) });
+  else updateSettings({ skills: [...list, { id: uid(), name: input.name, prompt: input.prompt }] });
+  toast('Skill /' + input.name + ' saved', 'success');
+}
+export function removeSkill(id: Id) { updateSettings({ skills: state.settings.skills.filter((s) => s.id !== id) }); toast('Skill removed', 'info'); }
+export function setPluginEnabled(id: string, on: boolean) { updateSettings({ plugins: { ...state.settings.plugins, [id]: on } }); }
 let schedulerStarted = false;
 export function startScheduler() {
   if (schedulerStarted) return; schedulerStarted = true;

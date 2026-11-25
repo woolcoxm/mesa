@@ -26,6 +26,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - **Real attachments**: `@name` in a prompt resolves against the session's artifacts and the file contents are sent to the model or ACP agent (truncated at 4,000 chars each), with chips under the message showing what was attached.
 - Regression-checked live mode against the real local Strata endpoint (model list via the proxy, streamed answer, fenced HTML → app artifact + showcase).
 - **Automations are real**: schedule a prompt every N minutes/hours into a chosen or fresh session; live countdown, last-run time, Run now, pause and delete; the scheduler runs while Mesa is open.
+- **Skills are real**: save reusable prompts in Plugins & Skills and expand them with `/name` in the composer (trailing text is appended); plugin toggles persist; `/export` now downloads the JSONL ledger and `/share` opens Publish for the latest HTML deliverable (both were placeholder toasts).
 
 ### Fixed
 - Preview tab kept the segment chosen in a previous session (could show a code doc instead of the session's app); it now resets to each session's headline deliverable and never points at a segment the session lacks.

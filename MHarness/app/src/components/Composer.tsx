@@ -17,6 +17,7 @@ const FILES = ['mesa-demo/src/App.tsx', 'mesa-demo/src/styles.css', 'mesa-demo/s
 
 export function Composer({ session }: { session: Session }) {
   const [text, setText] = useState('');
+  const st = useStore();
   const [menu, setMenu] = useState<'slash' | 'file' | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const onDrop = (e: React.DragEvent) => {
@@ -54,15 +55,15 @@ export function Composer({ session }: { session: Session }) {
   };
   const submit = (mode?: 'queue' | 'inject') => {
     const t = text.trim(); if (!t) return;
-    if (t.startsWith('/')) { runSlash(t); setText(''); return; }
+    if (t.startsWith('/')) { const m = t.split(/\s+/)[0]; const skill = (st.settings.skills ?? []).find((s) => '/' + s.name === m); if (skill) { setText(skill.prompt + t.slice(m.length)); return; } runSlash(t); setText(''); return; }
     send(t, { mode }); setText(''); setMenu(null);
   };
   const runSlash = (t: string) => {
     const m = t.split(/\s+/)[0];
     if (m === '/plan' || m === '/build' || m === '/auto') import('../state/store').then((s) => s.setMode(session.id, m.slice(1) as 'plan' | 'build' | 'auto'));
     else if (m === '/clear') import('../state/store').then((s) => s.newSessionAction());
-    else if (m === '/export') import('../state/store').then((s) => s.toast('Export queued — JSONL written to exports/', 'success'));
-    else if (m === '/share') { setDockTab('artifacts'); import('../state/store').then((s) => s.toast('Pick a deliverable and press Share', 'info')); }
+    else if (m === '/export') import('../state/store').then((s) => s.exportSession(session.id, 'jsonl'));
+    else if (m === '/share') { const latest = [...session.artifacts].reverse().find((a) => a.html); if (latest) import('../state/store').then((s) => s.openPublish(session.id, latest.id)); else { setDockTab('artifacts'); import('../state/store').then((s) => s.toast('Build an app first — publishing is for HTML deliverables', 'info')); } }
   };
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.altKey) { e.preventDefault(); submit(); }
@@ -71,7 +72,8 @@ export function Composer({ session }: { session: Session }) {
     else if (e.key === 'Escape') setMenu(null);
   };
   const lastWord = text.split(/\s/).pop() ?? '';
-  const filteredSlash = SLASH.filter((s) => s.cmd.startsWith(text.split(' ')[0]));
+  const slashItems = [...SLASH, ...(st.settings.skills ?? []).map((s) => ({ cmd: '/' + s.name, desc: 'Skill · ' + s.prompt.slice(0, 70), skill: s }))];
+  const filteredSlash = slashItems.filter((s) => s.cmd.startsWith(text.split(' ')[0]));
   const filteredFiles = FILES.filter((f) => lastWord.length <= 1 || f.toLowerCase().includes(lastWord.slice(1).toLowerCase()));
 
   return (

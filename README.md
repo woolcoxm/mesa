@@ -133,6 +133,12 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 `MHarness/desktop` is a tiny Electron shell: it starts the Mesa server itself (real shell, notebook execution and ACP included) and opens the built app in its own window — no browser tab, links go to your system browser. `pnpm install && pnpm start` in that folder; `pnpm smoke` verifies the window loads. It is untested on other machines so far, so please report back on [#6](https://github.com/woolcoxm/mesa/issues/6).
 
+### Skills
+
+![Plugins and skills](docs/screenshots/34-plugins-skills.png)
+
+**Skills** (Plugins & Skills page) are reusable prompts: save one, then type /name extra instructions in the composer and it expands into the prompt with your additions. Built-in plugin toggles persist too. The composer's /export downloads the session ledger and /share opens Publish for the latest HTML deliverable.
+
 ### Automations
 
 ![Scheduled prompts in the Automations page](docs/screenshots/33-automations.png)
