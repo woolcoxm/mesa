@@ -64,7 +64,7 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [], skills: [], plugins: {}, alwaysAllow: {} },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [], skills: [], plugins: {}, alwaysAllow: {}, autoReview: true },
   canvasSplit: null,
   canvasArtifact: null,
   insert: null,
@@ -464,6 +464,22 @@ function fakeShell(line: string): string[] {
 
 // ---------- approvals ----------
 const approvalResolvers = new Map<Id, (d: Decision) => void>();
+/** A second pass over the command by the configured model: one line, "low|medium|high — reason". 6 s budget; null when off, unconfigured or slow. */
+async function autoReviewRisk(cmd: string): Promise<{ level: 'low' | 'medium' | 'high'; note: string } | null> {
+  const p = state.settings.provider;
+  if (!state.settings.autoReview || state.settings.agent !== 'live' || !p?.baseUrl || !(p.apiKey || p.preset === 'mock')) return null;
+  try {
+    const h = streamChat({ baseUrl: p.baseUrl, apiKey: p.apiKey ?? '', model: p.model, preset: p.preset ?? 'custom', proxy: !!p.proxy }, [
+      { role: 'system', content: 'You are a terse security reviewer for shell commands run inside a repository. Reply with exactly one line: "low — reason", "medium — reason" or "high — reason".' },
+      { role: 'user', content: cmd },
+    ], () => {}, { firstByteMs: 6000 });
+    const timer = setTimeout(() => h.abort(), 7000);
+    const r = await h.done; clearTimeout(timer);
+    const m = /^(low|medium|high)\b/i.exec(r.text.trim());
+    if (!m) return null;
+    return { level: m[1].toLowerCase() as 'low' | 'medium' | 'high', note: r.text.trim().replace(/^(low|medium|high)\s*[—-]\s*/i, '').slice(0, 140) };
+  } catch { return null; }
+}
 export function decide(sessionId: Id, decision: Decision) {
   const s = state.sessions.find((x) => x.id === sessionId); const ap = s?.pendingApproval; if (!s || !ap) return;
   approvalResolvers.get(ap.id)?.(decision);
@@ -837,7 +853,9 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
         const flags = ['rm -rf', 'sudo', '| sh', '| bash', 'curl ', 'git push', 'drop'].filter((f) => cmd.includes(f));
         const alwaysOk = !!state.settings.alwaysAllow?.bash && flags.length === 0; // "always for this repo", but dangerous patterns still prompt
         if (preset !== 'full-access' && !cur?.allowSessionShell && !alwaysOk) {
-          const d = await requestApproval(sessionId, turnId, tb, tcId, { kind: 'shell', title: 'Run shell command', detail: cmd, flags, risk: { level: flags.length ? 'high' : 'medium', rationale: flags.length ? `Matches dangerous pattern(s): ${flags.join(', ')}` : state.settings.shell ? 'Requested by the live model — runs for real on this machine (inside the repository folder).' : 'Requested by the live model; runs in the demo sandbox.' } }, false);
+          const review = flags.length ? null : await autoReviewRisk(cmd);
+          const rationale = flags.length ? `Matches dangerous pattern(s): ${flags.join(', ')}` : review ? `${review.level} risk — ${review.note}` : state.settings.shell ? 'Requested by the live model — runs for real on this machine (inside the repository folder).' : 'Requested by the live model; runs in the demo sandbox.';
+          const d = await requestApproval(sessionId, turnId, tb, tcId, { kind: 'shell', title: 'Run shell command', detail: cmd, flags, risk: { level: flags.length ? 'high' : review?.level ?? 'medium', rationale } }, false);
           if (d.action === 'deny') { allowed = false; output = `Denied by user${d.reason ? `: ${d.reason}` : ''}`; }
         }
         if (allowed) {

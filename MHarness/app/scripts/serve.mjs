@@ -366,6 +366,12 @@ async function mockChat(req, res) {
     for (const piece of args.match(/.{1,40}/gs) ?? []) await send({ delta: { tool_calls: [{ index: 0, function: { arguments: piece } }] } });
     await send({ delta: {}, finish_reason: 'tool_calls' });
   };
+  if (messages.some((m) => m.role === 'system' && /security reviewer/i.test(String(m.content)))) {
+    // Auto-review hook: answer the one-line risk verdict the approval flow expects.
+    const risky = /\b(sudo|rm -rf|curl .*\| ?sh|git push|drop table)\b/i.test(String(last.content));
+    await send({ delta: { content: risky ? 'high — matches a destructive pattern' : 'low — read-only command inside the repository' } });
+    await send({ delta: {}, finish_reason: 'stop' }); res.end(); return;
+  }
   if (last.role === 'user' && typeof last.content === 'string' && last.content.startsWith('echo:')) {
     // Test hook: stream the rest of the prompt verbatim (markdown / HTML edge cases).
     const body = last.content.slice(5).replace(/^\s+/, '');

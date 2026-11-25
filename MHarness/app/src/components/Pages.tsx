@@ -62,7 +62,7 @@ export function SettingsPage() {
       <section className="set-section"><h4>Permissions</h4>
         <ShellRow />
         <ScopeMemoryRow />
-        <Row label="Auto-review tool calls" sub="A second model labels risk before an approval is shown"><Toggle on={true} onChange={() => {}} /></Row>
+        <Row label="Auto-review tool calls" sub="Before an approval is shown, the configured model labels the command risk in one line (6 s budget; off or unavailable → static rationale)"><Toggle on={s.autoReview} onChange={(on) => updateSettings({ autoReview: on })} /></Row>
       </section>
     </div>
   );

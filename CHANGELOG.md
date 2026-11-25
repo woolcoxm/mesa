@@ -11,6 +11,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 
 ### Fixed
 - **"Always allow for this repo" now sticks**: the approval scope is remembered per tool for the workspace (dangerous shell patterns still prompt; ACP permission requests can be remembered too), and Settings → Permissions lists the rules with a revoke button — previously the choice only allowed the one command.
+- **Auto-review tool calls is real**: before a live shell approval is shown, the configured model returns a one-line risk verdict ("low — read-only command…") that sets the risk label and rationale in the takeover (6 s budget; off or unavailable → static rationale). The Settings toggle was previously a dead switch.
 
 ## [0.3.0] — 2026-11-24
 
