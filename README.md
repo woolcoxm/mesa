@@ -49,7 +49,7 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Notebook beside chat](docs/screenshots/22-notebook-beside.png) | ![Stats with token sparkline](docs/screenshots/24-stats-sparkline.png) |
 | **Notebooks that actually run** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (HTML in a sandboxed frame). Press **Run** on a cell or **Run all**: the cells execute in one real Python process on the Mesa host (state carries between cells, per-cell tracebacks, timeouts), the Run console records the run, and the cells fill with live output. "Convert to script" downloads the code cells. | **Stats** — context, cache hit, cost (estimated from list pricing when the model is known) and a per-turn token sparkline with hover tooltips; the timeline tab shows every event's timing. |
 
-Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands; while a turn streams, the context meter shows a live **tok/s** readout.
+Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands; hover any finished turn for **Retry / Edit / Copy**; while a turn streams, the context meter shows a live **tok/s** readout.
 
 > Every screenshot above is regenerated from a deterministic demo run with `pnpm shots` (headless Chromium), so the pictures always match the current build.
 
@@ -127,6 +127,10 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 **Security** — generated pages render in `<iframe sandbox="allow-scripts">` without `allow-same-origin`; inline HTML in prose is rendered as text, never executed (verified with `<img onerror>` and `window.parent` injection tests).
 
+### Desktop app (experimental)
+
+`MHarness/desktop` is a tiny Electron shell: it starts the Mesa server itself (real shell, notebook execution and ACP included) and opens the built app in its own window — no browser tab, links go to your system browser. `pnpm install && pnpm start` in that folder; `pnpm smoke` verifies the window loads. It is untested on other machines so far, so please report back on [#6](https://github.com/woolcoxm/mesa/issues/6).
+
 ---
 
 ## Keyboard
@@ -181,7 +185,7 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Roadmap
 
-Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Still planned: SQLite + FTS5 for large histories (#1), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Also shipped as experimental: the **desktop shell** (#6, Electron; native PTYs still to come). Still planned: SQLite + FTS5 for large histories (#1), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## Changelog & license
 

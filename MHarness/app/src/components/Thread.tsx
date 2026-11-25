@@ -2,7 +2,7 @@ import { sc } from '../state/platform';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText, Pencil, Terminal as TerminalIcon, Eye, Globe, Search, Brain, Cpu, Play, Check, X, Loader2, Clock,
-  ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2, RotateCcw,
+  ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2, RotateCcw, Copy,
 } from 'lucide-react';
 import { Markdown } from './Markdown';
 import { insertIntoComposer, isAcpAgent, isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
@@ -105,6 +105,7 @@ function TurnCard({ turn, session, first }: { turn: Turn; session: Session; firs
             <div className="turn-actions">
               <button className="chip-btn" title="Run the same prompt again as a new turn" disabled={session.state !== 'idle'} onClick={() => send(turn.user)}><RotateCcw size={11} />Retry</button>
               <button className="chip-btn" title="Put this message back in the composer" onClick={() => insertIntoComposer(turn.user)}><Pencil size={11} />Edit</button>
+              {(() => { const md = turn.blocks.filter((b) => b.type === 'text').map((b) => (b.type === 'text' ? b.text : '')).join('\n\n').trim(); return md ? <button className="chip-btn" title="Copy the answer as Markdown" onClick={async () => { try { await navigator.clipboard.writeText(md); toast('Answer copied as Markdown', 'success'); } catch { toast('Clipboard unavailable', 'warning'); } }}><Copy size={11} />Copy</button> : null; })()}
               <span className="turn-meta">{turn.deliverables.length ? `${turn.deliverables.length} deliverable${turn.deliverables.length === 1 ? '' : 's'} · ` : ''}{(secs).toFixed(0)}s</span>
             </div>
           )}

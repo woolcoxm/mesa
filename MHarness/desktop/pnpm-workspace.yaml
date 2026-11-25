@@ -1,0 +1,8 @@
+nodeLinker: hoisted
+shamefullyHoist: true
+confirmModulesPurge: false
+# Electron's postinstall downloads its binary; nothing else here runs install scripts.
+allowBuilds:
+  electron: true
+onlyBuiltDependencies:
+  - electron

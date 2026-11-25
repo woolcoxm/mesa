@@ -16,6 +16,8 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - **Notebook execution (#7)** — Run / Run all on notebook cells executes them in one real Python process on the Mesa host (state carries between cells, per-cell tracebacks, timeouts); the run is recorded in the Run console and the cells fill with live output. Opt in with `"notebook": { "command": "python" }`.
 - `serve.mjs` survives a throwing request handler (logged, not fatal).
 - Live **tok/s** readout under the context meter while a turn streams.
+- **Copy** on finished turns (Markdown to the clipboard) beside Retry / Edit.
+- **Desktop shell (experimental, #6)** — `MHarness/desktop`: Electron window that starts the Mesa server and loads the built app; `pnpm smoke` verifies it loads. Could not be launched from the build environment's sandbox, so it awaits a report from a real desktop.
 
 ### Fixed
 - Preview tab kept the segment chosen in a previous session (could show a code doc instead of the session's app); it now resets to each session's headline deliverable and never points at a segment the session lacks.
