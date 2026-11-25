@@ -173,13 +173,15 @@ export function DiffChip({ diff, onOpen }: { diff: DiffInfo; onOpen?: () => void
 
 function ToolRow({ call, session }: { call: ToolCall; session: Session }) {
   const [open, setOpen] = useState(false);
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<number | null>(null);
   const Icon = ICONS[call.name] ?? Sparkles;
   const StatusIcon = STATUS_ICON[call.status];
   const hasOutput = !!(call.output && call.output.trim());
   const run = call.runId ? session.runs.find((r) => r.id === call.runId) : undefined;
   const statusCls = call.status === 'error' || call.status === 'denied' ? 'bad' : call.status === 'success' ? 'ok' : call.status === 'awaiting-approval' ? 'wait' : 'run';
   return (
-    <div className={'toolrow st-' + call.status} data-call-id={call.id}>
+    <div className={'toolrow st-' + call.status} data-call-id={call.id} onMouseEnter={() => { if (open || !(call.output || run?.lines.length)) return; peekTimer.current = window.setTimeout(() => setPeek(true), 350); }} onMouseLeave={() => { if (peekTimer.current) clearTimeout(peekTimer.current); setPeek(false); }}>
       <div className="toolrow-main">
         <span className="tool-icon"><Icon size={13} /></span>
         <span className="tool-name">{call.name}</span>
@@ -194,6 +196,7 @@ function ToolRow({ call, session }: { call: ToolCall; session: Session }) {
         {run && <button className="chip-btn" onClick={() => { selectRun(session.id, run.id); setDockTab('run'); }} title="Open in Run console"><TerminalIcon size={11} /> console</button>}
         <span className={'tool-status ' + statusCls}><StatusIcon size={12} className={call.status === 'running' ? 'spin' : ''} />{call.ms ? `${(call.ms / 1000).toFixed(1)}s` : call.status === 'awaiting-approval' ? 'approval' : call.status === 'running' ? '' : call.status}</span>
       </div>
+      {peek && !open && <div className="peek tool-peek" role="tooltip"><div className="peek-head">{run?.command ?? call.title}</div><pre className="peek-diff">{(call.output || (run?.lines ?? []).join('\n')).split('\n').slice(-10).map((l, i) => <div key={i} className="dl">{l}</div>)}</pre></div>}
       {call.error && <div className="tool-error">{call.error}</div>}
       {open && call.output && <pre className="tool-output">{call.output.length > 4000 ? call.output.slice(0, 4000) + '\n… (truncated)' : call.output}</pre>}
     </div>

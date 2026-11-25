@@ -832,3 +832,14 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 .crash-details { font-family: var(--mesa-type-mono); font-size: 11px; color: var(--mesa-danger); background: var(--mesa-bg-sunken); border-radius: var(--mesa-r-md); padding: 8px 10px; max-width: 100%; overflow: auto; white-space: pre-wrap; }
 .crash-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
 .btn.danger { color: var(--mesa-danger); }
+/* ---------- tool output peek + motion polish ---------- */
+.toolrow { position: relative; }
+.tool-peek { top: calc(100% + 6px); left: 26px; width: min(560px, 82vw); }
+.tool-peek .dl { white-space: pre-wrap; }
+.app { animation: appBoot .45s var(--mesa-e-out) both; }
+@keyframes appBoot { from { opacity: 0; transform: scale(.996); } }
+.center { animation: sessionIn var(--mesa-m-slow) var(--mesa-e-out); }
+@keyframes sessionIn { from { opacity: 0; transform: translateY(6px); } }
+.tokenmeter.pulse svg { animation: meterPulse 1.2s ease-in-out infinite; }
+@keyframes meterPulse { 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .app, .center, .tokenmeter.pulse svg { animation: none; } }

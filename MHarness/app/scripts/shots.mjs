@@ -65,6 +65,10 @@ await shot('03-showcase');
 await page.locator('.showcase-verify .chip-btn:has-text("preview")').click(); await page.waitForTimeout(800);
 await esc();
 await shot('04-preview');
+// 30 — hover a command row to peek its output
+await page.locator('.toolrow', { hasText: 'pnpm install' }).first().hover(); await page.waitForTimeout(600);
+await shot('30-tool-peek');
+await page.mouse.move(720, 500); await page.waitForTimeout(150);
 
 // 05 — run console with a typed command
 await page.keyboard.press('Control+2'); await page.waitForTimeout(500);

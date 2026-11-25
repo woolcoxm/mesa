@@ -52,7 +52,7 @@ export function Header({ session }: { session: Session }) {
       <div className="hdr-right">
         <button className={'pill pill-model' + (menu === 'model' ? ' open' : '')} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'model' ? null : 'model'); }} title="Model"><Activity size={13} />{session.model}<ChevronDown size={12} /></button>
         {menu === 'model' && <div className="menu menu-right" onClick={(e) => e.stopPropagation()}>{MODELS.map((m) => <button key={m} className={'menu-item' + (m === session.model ? ' on' : '')} onClick={() => { setModel(session.id, m); setMenu(null); }}><div><b>{m}</b><div className="menu-sub">{m.includes('flash') ? 'fast · cheap' : m.includes('codex') ? 'code-tuned' : 'balanced'}</div></div>{m === session.model && <Check size={14} />}</button>)}</div>}
-        <div className="tokenmeter" title={`Context ${session.tokens.toLocaleString()} / ${session.contextMax.toLocaleString()} tokens · cache ${(session.cacheHit * 100).toFixed(0)} %`}>
+        <div className={'tokenmeter' + (liveLen >= 0 ? ' pulse' : '')} title={`Context ${session.tokens.toLocaleString()} / ${session.contextMax.toLocaleString()} tokens · cache ${(session.cacheHit * 100).toFixed(0)} %`}>
           <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden><circle cx="13" cy="13" r="10" className="tm-bg" /><circle cx="13" cy="13" r="10" className={'tm-fg' + (pct > 0.8 ? ' warn' : '')} strokeDasharray={`${pct * 62.8} 62.8`} transform="rotate(-90 13 13)" /></svg>
           <span className="tm-label">{pct > 0.8 ? 'Compact soon' : `${Math.round(pct * 100)} %`}</span>
           {liveLen >= 0 && rateRef.current.rate > 1 && <span className="tm-rate" title="Streaming throughput (approximate)">{Math.round(rateRef.current.rate)} tok/s</span>}
