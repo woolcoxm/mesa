@@ -14,7 +14,7 @@ function inline(text: string, key: string): ReactNode[] {
     const tok = m[0];
     if (tok.startsWith('**')) out.push(<strong key={`${key}-b${i++}`}>{tok.slice(2, -2)}</strong>);
     else if (tok.startsWith('`')) out.push(<code key={`${key}-c${i++}`} className="md-code">{tok.slice(1, -1)}</code>);
-    else { const mm = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(tok); out.push(<a key={`${key}-a${i++}`} href={mm?.[2]} target="_blank" rel="noreferrer">{mm?.[1]}</a>); }
+    else { const mm = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(tok); const href = (mm?.[2] ?? '').trim(); out.push(/^https?:\/\//i.test(href) || href.startsWith('#') ? <a key={`${key}-a${i++}`} href={href} target="_blank" rel="noreferrer">{mm?.[1]}</a> : <span key={`${key}-a${i++}`} className="link-text" title="Link scheme not allowed">{mm?.[1]}</span>); }
     last = m.index + tok.length;
   }
   if (last < text.length) out.push(text.slice(last));
