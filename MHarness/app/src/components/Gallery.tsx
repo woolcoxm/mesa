@@ -4,7 +4,7 @@ import { X, Search, Pin, Layers, GitCompare, RotateCcw, Share2, Sparkles, Tag, A
 import { getState, setGalleryFilter, toggleGallery, toast } from '../state/store';
 import { useStore } from '../state/useStore';
 import { kindMeta, HtmlThumb } from './Dock';
-import { openPublish, runNotebookCells } from '../state/store';
+import { openPublish, runNotebookCells, send, setActive } from '../state/store';
 import { NotebookView, notebookThumb } from './NotebookView';
 import { Markdown } from './Markdown';
 import type { Artifact } from '../state/types';

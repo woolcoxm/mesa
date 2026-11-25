@@ -211,17 +211,7 @@ export function TimelineTab({ session }: { session: Session }) {
   );
 }
 
-export function BrowserTab({ session }: { session: Session }) {
-  const [url, setUrl] = useState('http://localhost:5173');
-  const app = session.artifacts.find((a) => a.kind === 'app');
-  return (
-    <div className="browser-tab">
-      <div className="browser-bar"><button className="icon-btn sm" title="Back" onClick={() => toast('History is empty in the demo browser', 'info')}>‹</button><button className="icon-btn sm" title="Forward" onClick={() => toast('History is empty in the demo browser', 'info')}>›</button><button className="icon-btn sm" title="Reload" onClick={() => { const f = document.querySelector('.browser-body iframe') as HTMLIFrameElement | null; if (f) { const s = f.srcdoc; f.srcdoc = ''; setTimeout(() => { f.srcdoc = s; }, 30); } toast('Reloading preview', 'info'); }}>⟳</button><div className="url"><Globe size={12} /><input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') toast(`Navigating to ${url} (demo browser keeps the generated app)`, 'info'); }} aria-label="URL" /></div><button className="icon-btn sm" onClick={() => toast('Opening in system browser (demo)', 'info')}><ExternalLink size={12} /></button></div>
-      <div className="browser-body">{app ? <iframe title="browser" sandbox="allow-scripts" srcDoc={app.html} /> : <EmptyTab icon={<Globe size={22} />} text="Nothing to browse" sub="Build an app and it appears here." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />}</div>
-      <div className="browser-panel"><div className="bp-tabs"><span className="on">Console</span><span>Network</span></div><div className="bp-body"><div className="bp-log"><span className="lv">log</span>[vite] connecting…</div><div className="bp-log"><span className="lv">log</span>[vite] connected.</div><div className="bp-log"><span className="lv">hmr</span>update /src/App.tsx</div></div></div>
-    </div>
-  );
-}
+export { BrowserTab } from './BrowserTab';
 
 export function EmptyTab({ icon, text, sub, action }: { icon: React.ReactNode; text: string; sub?: string; action?: { label: string; run: () => void } }) {
   return <div className="empty-tab"><div className="et-icon">{icon}</div><div className="et-text">{text}</div>{sub && <div className="et-sub">{sub}</div>}{action && <button className="btn sm primary et-cta" onClick={action.run}>{action.label}</button>}</div>;
@@ -261,7 +251,7 @@ export function PreviewTab({ session }: { session: Session }) {
         <div className="seg"><button className={panel === 'console' ? 'on' : ''} onClick={() => setPanel(panel === 'console' ? 'none' : 'console')}>Console</button><button className={panel === 'network' ? 'on' : ''} onClick={() => setPanel(panel === 'network' ? 'none' : 'network')}>Network</button></div>
         <button className="icon-btn sm" title="Screenshot to chat" onClick={() => { insertIntoComposer('@screenshot preview.png (390×844) — '); toast('Screenshot attached to composer', 'success'); }}><Camera size={13} /></button>
         <button className="icon-btn sm" title="Send element to agent" onClick={() => { insertIntoComposer('@element '); toast('Inspector on — click an element in the preview', 'info'); }}><MousePointerClick size={13} /></button>
-        <button className="icon-btn sm" title="Open in browser" onClick={() => toast('Opening in system browser (demo)', 'info')}><ExternalLink size={13} /></button>
+        <button className="icon-btn sm" title="Open in a new browser tab" onClick={() => { const html = show?.html; if (!html) return toast('Nothing to open — this deliverable has no HTML', 'info'); const blob = URL.createObjectURL(new Blob([html], { type: 'text/html' })); window.open(blob, '_blank', 'noopener'); setTimeout(() => URL.revokeObjectURL(blob), 60_000); toast(`Opened ${show.title} in a new tab`, 'success'); }}><ExternalLink size={13} /></button>
       </div>
       <div className="preview-stage">
         <div className="device" style={device === 0 ? { width: '100%', height: '100%' } : { width: s.w, height: s.h }}>

@@ -133,6 +133,12 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 `MHarness/desktop` is a tiny Electron shell: it starts the Mesa server itself (real shell, notebook execution and ACP included) and opens the built app in its own window — no browser tab, links go to your system browser. `pnpm install && pnpm start` in that folder; `pnpm smoke` verifies the window loads. It is untested on other machines so far, so please report back on [#6](https://github.com/woolcoxm/mesa/issues/6).
 
+### A real (framed) browser tab
+
+![The Browser tab rendering example.com beside the thread](docs/screenshots/35-browser-tab.png)
+
+The dock's **Browser** tab is a small framed browser: it opens the session's latest app, you can type any URL (sites that allow framing load in place), and back / forward / reload / open-in-a-new-tab all work, with the trip logged below. The Preview tab's open button likewise opens the deliverable in a real new tab.
+
 ### Skills
 
 ![Plugins and skills](docs/screenshots/34-plugins-skills.png)

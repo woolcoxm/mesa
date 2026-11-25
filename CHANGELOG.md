@@ -27,6 +27,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Regression-checked live mode against the real local Strata endpoint (model list via the proxy, streamed answer, fenced HTML → app artifact + showcase).
 - **Automations are real**: schedule a prompt every N minutes/hours into a chosen or fresh session; live countdown, last-run time, Run now, pause and delete; the scheduler runs while Mesa is open.
 - **Skills are real**: save reusable prompts in Plugins & Skills and expand them with `/name` in the composer (trailing text is appended); plugin toggles persist; `/export` now downloads the JSONL ledger and `/share` opens Publish for the latest HTML deliverable (both were placeholder toasts).
+- **Browser tab is real**: framed browsing of the session's app or any URL with back / forward / reload, open-in-new-tab and a navigation log; Preview's open button opens the deliverable in a real new tab; Gallery's "Re-run" re-sends the prompt that produced the deliverable.
 
 ### Fixed
 - Preview tab kept the segment chosen in a previous session (could show a code doc instead of the session's app); it now resets to each session's headline deliverable and never points at a segment the session lacks.
