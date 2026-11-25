@@ -133,7 +133,8 @@ function ProviderForm() {
       </div>
       <div className="pf-actions">
         <label className="tk-remember"><input type="checkbox" checked={p.proxy} onChange={(e) => set({ proxy: e.target.checked })} /> route via Mesa proxy (avoids CORS)</label>
-        <label className="tk-remember" title={p.preset === 'strata' ? 'Strata (qwen3) hangs on tool definitions — keep this off there.' : 'Lets the model call present_html / bash / read_file'}><input type="checkbox" checked={toolsOn} onChange={(e) => set({ tools: e.target.checked })} /> tool calling</label>
+        <label className="tk-remember" title={p.preset === 'strata' ? 'Strata (qwen3) hangs on tool definitions — keep this off there; Mesa uses fence-based tools instead.' : 'Lets the model call present_html / bash / read_file'}><input type="checkbox" checked={toolsOn} onChange={(e) => set({ tools: e.target.checked })} /> tool calling</label>
+        {!toolsOn && <span className="tag ok" title="The model can still act: a ```bash fence in its answer becomes a real, approved shell command whose output is fed back (up to 3 rounds).">fence-based tools on</span>}
         <span className="spacer" />
         <span className={'pf-status ' + status}>{status === 'testing' ? 'Testing…' : status === 'ok' ? `✓ ${msg}` : status === 'fail' ? `✗ ${msg}` : 'The key stays in this browser (localStorage).'}</span>
         <button className="btn sm ghost" onClick={fetchModels} disabled={!p.baseUrl || listing}>{listing ? 'Fetching…' : 'Fetch models'}</button>

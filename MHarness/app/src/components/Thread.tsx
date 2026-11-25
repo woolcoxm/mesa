@@ -67,6 +67,12 @@ const LIVE_SUGGESTIONS: Suggestion[] = [
   ['🎨', 'Design a landing page hero', 'Design a dark, minimal landing-page hero for an AI agent harness called Mesa, with a gradient headline and one call-to-action button. Self-contained HTML with a <title>.'],
   ['🧠', 'Explain a concept with a diagram', 'Explain how an event-sourced session ledger works, and include a small self-contained HTML diagram (boxes and arrows) illustrating it.'],
 ];
+const FENCE_SUGGESTIONS: Suggestion[] = [
+  ['🖥️', 'List the repository with a shell command', 'Run a shell command to list the top-level entries of this repository, then tell me in two sentences what kind of project this is.'],
+  ['🧪', 'Run the tests and summarise', 'Run the test suite for this project with a shell command, then summarise the result in three bullets.'],
+  ['⚡', 'Build a glowing click-counter page', 'Build a tiny self-contained HTML page with one big glowing button that counts clicks. Include a <title>.'],
+  ['📊', 'Make a bar chart from sample data', 'Make a self-contained HTML page with a bar chart of monthly revenue (Jan 182k, Feb 201k, Mar 198k, Apr 244k, May 262k, Jun 299k, Jul 331k). Include a <title>.'],
+];
 function EmptyThread() {
   const st = useStore();
   const live = isLiveAgent() || isAcpAgent();
@@ -77,7 +83,7 @@ function EmptyThread() {
       <h2>Where your agent works in the open.</h2>
       <p>Ask for something that produces a thing — an app, a chart, a fix — and it shows up on the right as a deliverable you can <b>open</b>, <b>run</b>, <b>compare</b> and <b>share</b>.</p>
       <div className="suggest">
-        {(live ? LIVE_SUGGESTIONS : DEMO_SUGGESTIONS).map(([icon, label, prompt]) => (
+        {(live ? (st.settings.provider && !(st.settings.provider.tools ?? (st.settings.provider.preset !== 'strata')) && st.settings.shell ? FENCE_SUGGESTIONS : LIVE_SUGGESTIONS) : DEMO_SUGGESTIONS).map(([icon, label, prompt]) => (
           <button key={label} onClick={() => send(prompt)}>{icon} {label}</button>
         ))}
       </div>

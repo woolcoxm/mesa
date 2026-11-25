@@ -7,6 +7,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 ### Added
 - **Fence-based tools for models without native tool calling** (Strata): a ` ```bash ` fence in the model's answer becomes a real tool row behind the approval takeover (auto-review included), runs on the host, and its output is fed back as the next message for up to three rounds. Verified with the real Strata model (`ls -1 .` → follow-up commands of its own).
 - Windows real shell: `head`, `tail`, `wc -l`, `touch`, `mkdir -p`, `rm -rf` are rewritten to PowerShell/cmd equivalents (covered by the smoke test on all three OSes).
+- Settings shows a "fence-based tools on" badge when native tool calling is off, and the empty state suggests shell tasks first for those models.
 
 ### Changed
 - Toasts anchor just above the composer (tracking its height) instead of under the header, so they never cover the showcase title or the composer controls.
