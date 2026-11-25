@@ -39,7 +39,7 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Timeline](docs/screenshots/08-timeline.png) | ![Run console](docs/screenshots/05-run-console.png) |
 | **Timeline** — every event with its timing bar, filter chips by kind, rows jump to the call in the thread, and checkpoints that genuinely **rewind** the session to that point. | **Run console** — real xterm terminals per session, background jobs with kill/restart/notify, a simulated shell you can type into. |
 | ![Gallery](docs/screenshots/09-gallery.png) | ![Command palette](docs/screenshots/11-palette.png) |
-| **Gallery** — every deliverable across sessions: filters, search, detail view, side-by-side compare, re-run with fresh inputs, share links. | **Command palette** — fuzzy, keyboard-first; every tab, mode, demo and session is one keystroke away. |
+| **Gallery** — every deliverable across sessions: filters, search, detail view, side-by-side compare, **Re-run** (re-sends the prompt that produced it), publish. | **Command palette** — fuzzy, keyboard-first; every tab, mode, demo and session is one keystroke away. |
 | ![Settings](docs/screenshots/10-settings.png) | ![Light theme](docs/screenshots/14-light-shell.png) |
 | **Settings** — provider presets (Z.AI, Strata, OpenAI, custom, mock), "Fetch models", "Test connection", export JSONL/Markdown, reset. | **Light theme** — the same tokens; dark and light both meet WCAG AA contrast. |
 | ![Narrow layout](docs/screenshots/13-narrow-900.png) | ![Timeline](docs/screenshots/08-timeline.png) |
