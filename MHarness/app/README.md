@@ -4,7 +4,7 @@ Working MVP of the design in [`../../MHarness-design`](../../MHarness-design/REA
 
 ## Run it
 
-Works on Windows, macOS and Linux with Node ≥ 18.
+Works on Windows, macOS and Linux with Node ≥ 20 (Vite 7) and pnpm 11.
 
 ```bash
 pnpm install            # hoisted linker + esbuild build approval live in pnpm-workspace.yaml

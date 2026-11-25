@@ -12,7 +12,7 @@ Mesa is a single window where a person and an LLM agent co-work. The conversatio
 |---|---|
 | Stack | React 19 · TypeScript · Vite · xterm.js — zero UI framework, design tokens in CSS variables |
 | Models | Any OpenAI-compatible endpoint: **Z.AI Coding Plan**, **Strata**, OpenAI, custom, or the built-in **offline mock** |
-| Modes | Scripted demo agent (no network) · live streaming with tool calling |
+| Modes | Scripted demo agent (no network) · live streaming with native tool calling **or fence-based tools** (for models like Strata) · **ACP agents** (Claude Code, Codex, Gemini CLI…) |
 | Persistence | Event-sourced session ledger saved to the browser **and** mirrored to a workspace state file by the Mesa server — sessions survive reloads, new tabs and other browsers |
 | License | MIT |
 
@@ -36,14 +36,16 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | **Live preview** — sandboxed iframe (no `allow-same-origin`), device sizes, console/network capture, screenshot-to-chat, element-to-agent. HTML code blocks in chat have a **Run** button. | **Run console** — real xterm PTY tabs per session, background jobs with kill/restart/notify, a simulated shell you can type into (`ls`, `git status`, `pnpm test`…). |
 | ![Files & diffs](docs/screenshots/06-files-diffs.png) | ![Agents board](docs/screenshots/07-agents-board.png) |
 | **Files & diffs** — unified or split view, animated hunk reveals, "Explain this hunk" sends the hunk to the agent, hover peeks on every diff chip. | **Agents** — subagent tree with status and cost, or a kanban board of the plan. |
-| ![Timeline](docs/screenshots/08-timeline.png) | ![Run console](docs/screenshots/05-run-console.png) |
-| **Timeline** — every event with its timing bar, filter chips by kind, rows jump to the call in the thread, and checkpoints that genuinely **rewind** the session to that point. | **Run console** — real xterm terminals per session, background jobs with kill/restart/notify, a simulated shell you can type into. |
+| ![Real shell approval](docs/screenshots/15-real-shell-approval.png) | ![ACP agent settings](docs/screenshots/26-acp-settings.png) |
+| **Real shell for live agents** — an agent's command runs for real on the machine hosting Mesa (`cmd.exe` on Windows with POSIX rewrites, `$SHELL` elsewhere), confined to the repository and always behind the approval takeover. | **External agents over ACP** — drive Claude Code, Codex or Gemini CLI through the Agent Client Protocol; their tool calls and permission requests render like Mesa's own. |
 | ![Gallery](docs/screenshots/09-gallery.png) | ![Command palette](docs/screenshots/11-palette.png) |
 | **Gallery** — every deliverable across sessions: filters, search, detail view, side-by-side compare, **Re-run** (re-sends the prompt that produced it), publish. | **Command palette** — fuzzy, keyboard-first; every tab, mode, demo and session is one keystroke away. |
 | ![Settings](docs/screenshots/10-settings.png) | ![Light theme](docs/screenshots/14-light-shell.png) |
 | **Settings** — provider presets (Z.AI, Strata, OpenAI, custom, mock), "Fetch models", "Test connection", export JSONL/Markdown, reset. | **Light theme** — the same tokens; dark and light both meet WCAG AA contrast. |
 | ![Narrow layout](docs/screenshots/13-narrow-900.png) | ![Timeline](docs/screenshots/08-timeline.png) |
-| **Narrow layout** — the rail collapses to icons under 960 px and the dock is capped, so the thread stays usable on a laptop. | **Timeline** — every event with timing bars; click an event to flash its tool row in the thread; checkpoints are restorable. |
+| **Narrow layout** — the rail collapses to icons under 960 px and the dock is capped, so the thread stays usable on a laptop. | **Timeline** — every event with its timing bar and filter chips by kind; rows jump to the call in the thread; checkpoints genuinely **rewind** the session to that point. |
+| ![Streaming with tok/s](docs/screenshots/28-streaming-rate.png) | ![Fence-based tools](docs/screenshots/37-fence-tools.png) |
+| **Streaming you can read** — while a turn streams the context meter pulses and shows a live **tok/s** figure; tool rows animate as they run. | **Fence-based tools** — a model without native tool calling asks for a shell command with a ` ```bash ` fence; Mesa runs it behind the approval and feeds the output back. Shown: the real Strata model listing the repository. |
 | ![Guided tour](docs/screenshots/18-tour.png) | ![Accent colours](docs/screenshots/17-accent-rose.png) |
 | **Guided tour** — an animated spotlight walks through the shell on first run; replay from Settings or the palette. | **Accent colours** — six palettes re-tint buttons, cursors, charts and the showcase in both themes. |
 | ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | ![Publish with preflight](docs/screenshots/21-publish.png) |
@@ -53,7 +55,13 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Session peek](docs/screenshots/36-session-peek.png) | ![Tool output peek](docs/screenshots/30-tool-peek.png) |
 | **Peek before you click** — hover a session in the rail to see its last exchange and counts; hover any tool row to see what it printed; hover any diff chip to see the hunk. Nothing opens until you want it to. | **Hold Ctrl/⌘ to reveal shortcuts** — every control shows its chord as a badge while the modifier is held; press `?` for the searchable cheat sheet. |
 
-Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands; **@name in a prompt attaches that artifact's contents** (chips under the message show what was sent); hover a session in the rail to peek its last exchange, hover any finished turn for **Retry / Edit / Copy**, hover any tool row to peek what it printed; dialogs trap keyboard focus and hand it back when they close; while a turn streams, the context meter shows a live **tok/s** readout.
+Small things that add up:
+
+- Deleting a session offers **Undo** for 7 seconds; pressing **N** reuses an untouched empty session instead of piling up duplicates.
+- **Drop files** on the composer to attach them (HTML/SVG files open straight in the preview); **`@name` in a prompt attaches that artifact's contents**, with chips under the message showing what was sent.
+- The URL carries your place (`#/s/<session>/<tab>`), so a reload or a bookmark brings you back; long sessions render their tail first with "Show earlier turns".
+- Hover any finished turn for **Retry / Edit / Copy**; dialogs trap keyboard focus and hand it back when they close; the palette has **Accent · …** and **Density · …** commands.
+- Robustness: error boundaries around every pane (a recovery card instead of a white screen), global error toasts, a server that survives a throwing handler, and corrupted storage that falls back to the workspace state file.
 
 > Every screenshot above is regenerated from a deterministic demo run with `pnpm shots` (headless Chromium), so the pictures always match the current build.
 
@@ -61,12 +69,12 @@ Small things that add up: deleting a session offers **Undo** for 7 seconds; **dr
 
 ## Quick start
 
-Runs on **Windows, macOS and Linux** (Node ≥ 18; nothing else to install — the dev server, model proxy and offline mock have zero dependencies).
+Runs on **Windows, macOS and Linux** (Node ≥ 20 for Vite 7, pnpm 11; nothing else to install — the dev server, model proxy, real shell, notebook runner and offline mock have zero dependencies).
 
 ```bash
 git clone https://github.com/woolcoxm/mesa.git
 cd mesa/MHarness/app
-pnpm install          # macOS/Linux: `pnpm install` too; or `npm install` / `corepack enable`
+pnpm install          # or `npm install`; nothing to approve beyond esbuild's binary check
 pnpm build            # vite build → dist/
 pnpm serve            # → http://127.0.0.1:5173  (same as `node scripts/serve.mjs`)
 ```
@@ -97,7 +105,7 @@ Add `"notebook": { "command": "python" }` to `mesa.config.json` and the **Run** 
 
 With `"shell": true` (or `MESA_SHELL=1`), a live agent's `bash` tool runs **for real on the machine hosting `serve.mjs`** — `cmd.exe` on Windows (with a small `ls`/`cat`/`pwd` alias table so POSIX-style commands behave), otherwise your `$SHELL` with `-c`. Commands are confined to the repository folder, killed after a timeout, and **always gated by the approval takeover** in the UI. With the shell off, live `bash` calls run in a simulated sandbox instead.
 
-### External agents over ACP (experimental)
+## External agents over ACP (experimental)
 
 ![ACP settings](docs/screenshots/26-acp-settings.png) ![An external agent's permission request in the approval takeover](docs/screenshots/27-acp-approval.png)
 
@@ -135,9 +143,7 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 **Security** — generated pages render in `<iframe sandbox="allow-scripts">` without `allow-same-origin`; inline HTML in prose is rendered as text, never executed (verified with `<img onerror>` and `window.parent` injection tests).
 
-### Desktop app (experimental)
-
-`MHarness/desktop` is a tiny Electron shell: it starts the Mesa server itself (real shell, notebook execution and ACP included) and opens the built app in its own window — no browser tab, links go to your system browser. `pnpm install && pnpm start` in that folder; `pnpm smoke` verifies the window loads. It is untested on other machines so far, so please report back on [#6](https://github.com/woolcoxm/mesa/issues/6).
+## Browser tab, skills and automations
 
 ### A real (framed) browser tab
 
@@ -149,7 +155,7 @@ The dock's **Browser** tab is a small framed browser: it opens the session's lat
 
 ![Plugins and skills](docs/screenshots/34-plugins-skills.png)
 
-**Skills** (Plugins & Skills page) are reusable prompts: save one, then type /name extra instructions in the composer and it expands into the prompt with your additions. Built-in plugin toggles persist too. The composer's /export downloads the session ledger and /share opens Publish for the latest HTML deliverable.
+**Skills** (Plugins & Skills page) are reusable prompts: save one, then type `/name extra instructions` in the composer and it expands into the prompt with your additions. Built-in plugin toggles persist too. The composer's `/export` downloads the session ledger and `/share` opens Publish for the latest HTML deliverable.
 
 ### Automations
 
@@ -158,6 +164,10 @@ The dock's **Browser** tab is a small framed browser: it opens the session's lat
 **Automations** (left rail) schedule a prompt to run every N minutes or hours while Mesa is open — into a session you pick, or a fresh session each time. Each run streams like any other turn (approvals included), the row shows a live countdown to the next run and when it last ran, and **Run now** fires it immediately.
 
 ---
+
+## Desktop app (experimental)
+
+`MHarness/desktop` is a tiny Electron shell: it starts the Mesa server itself (real shell, notebook execution and ACP included) and opens the built app in its own window — no browser tab, links go to your system browser. `pnpm install && pnpm start` in that folder; `pnpm smoke` verifies the window loads. It is untested on other machines so far, so please report back on [#6](https://github.com/woolcoxm/mesa/issues/6).
 
 ## Keyboard
 
@@ -183,12 +193,16 @@ Hold **Ctrl/⌘** to reveal every available shortcut as a badge on its control, 
 
 ```
 MHarness/app/src
-  state/       types · event-sourced store (sessions, turns, runs, approvals, artifacts) · agent runner
-  agent/       provider.ts (OpenAI-compatible SSE + tool calling, proxy URL builder, prompts)
+  state/       types · event-sourced store (sessions, turns, runs, approvals, artifacts, automations) · agent runner · platform · shortcuts
+  agent/       provider.ts (OpenAI-compatible SSE + tool calling, proxy URL builder, prompts, cost table)
+               acp.ts / notebook.ts / publish.ts (ACP bridge client, notebook execution, publish preflight)
                scenarios.ts (scripted demo agent: tool calls, runs, approvals, deliverables)
-  components/  Rail · Header · Thread · Composer · Dock tabs · RunConsole · Showcase · Palette · Gallery · Pages · Confetti
+  components/  Rail · Header · Thread · Composer · Dock tabs · RunConsole · BrowserTab · CanvasPane · NotebookView
+               Showcase · Gallery · PublishDialog · Palette · CheatSheet · Tour · Pages · AutomationsPage · PluginsPage
+               ShortcutEditor · KeyHints · ErrorBoundary
   styles/      tokens.css (--mesa-*) · app.css
-scripts/serve.mjs   static server + model proxy + offline mock model (SSE, tool calls)
+scripts/serve.mjs     static server + model proxy + offline mock model + real shell + notebook runner + ACP bridge + publish
+scripts/shots.mjs     regenerates every README screenshot from a deterministic demo run
 ```
 
 - **Ledger as the single source of truth.** Every tool call, run, approval, artifact and checkpoint is appended to a session's timeline; the thread, dock tabs, stats and timeline are projections. Reload marks interrupted turns as cancelled.
@@ -205,17 +219,17 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 **Robustness** — every pane and dialog sits behind an error boundary: a rendering bug shows a recovery card (Retry · Copy details · Reset workspace) while the rest of the shell keeps working, and uncaught errors or rejected promises surface as toasts instead of failing silently. The server survives a throwing request handler, and live turns have a first-byte watchdog and a cancellation path.
 
-**CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests, on **Ubuntu, macOS and Windows**: install → typecheck → build → `scripts/smoke.mjs`, which boots the server with the real shell enabled and verifies the app, the shell status, a quoted command, exit-code propagation, the workspace boundary and the offline mock.
+**CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests, on **Ubuntu, macOS and Windows**: install → typecheck → build → `scripts/smoke.mjs` (13 checks), which boots the server with the real shell enabled and verifies the app, the shell status, quoted commands, exit-code propagation, the workspace boundary, POSIX `head`/`wc` rewrites, the offline mock, notebook execution (shared state, failing cell halts) and the ACP bridge against the reference agent.
 
 **Screenshots** — `pnpm shots` (after `npx playwright install chromium` once) replays a deterministic demo in headless Chromium and rewrites every image in `docs/screenshots/`, so the README never drifts from the UI.
 
-**UI verification** — a scripted Playwright pass (~140 checks across every screen and control), capturing `pageerror` as the crash signal and reviewing screenshots of each state. Coverage includes: boot and persistence (including corrupted and old-schema storage), rail actions (search, collapse, rename, delete, delete-all), header menus and cycling, composer (`@`, `/`, attach, queue/inject/stop/flush), approval decisions (Esc, Alt+R with reason, always-allow, cancel-from-takeover), showcase behaviours (pin-all, minimise/restore, DND, deleting the showcased session), run console (typing, `clear`, Ctrl+C, kill/restart/notify, shortcuts from terminal focus), preview (device sizes, console/network, screenshot-to-chat, ad-hoc run), files/diffs, agents, stats, timeline, browser tab, gallery (filter, search, compare, re-run), palette, exports, provider edge cases (unreachable/malformed URLs, stale responses), markdown/XSS injection, the real shell (approval → real `ls` output → exit code in the console), publish preflight (clean page publishes; embedded secrets refused with 422), extreme viewports, drag-resize of both sidebars, and the editable shortcut table (rebind, conflict rejection, reset).
+**UI verification** — a scripted Playwright pass (~190 checks across every screen and control), capturing `pageerror` as the crash signal and reviewing screenshots of each state. Coverage includes: boot and persistence (including corrupted and empty storage), rail actions (search, collapse, rename, delete, undo, arrow navigation), header menus and cycling, composer (`@`, `/`, skills, attach, drop, queue/inject/stop/flush), approval decisions (Esc, Alt+R with reason, once/session/repo scopes, auto-review verdicts, cancel-from-takeover), showcase behaviours (keyboard, pin-all, minimise/restore, DND), run console (typing, `clear`, Ctrl+C, kill/restart/notify, real commands), preview (device sizes, console/network, screenshot-to-chat, ad-hoc run), files/diffs, agents, stats, timeline (filters, checkpoint rewind), the browser tab, gallery (filter, search, compare, re-run, publish), palette and cheat sheet, exports, notebook execution, automations, error boundaries and focus traps, provider edge cases (unreachable/malformed URLs, stale responses), markdown/XSS injection, the real shell, fence-based tools with the real Strata model, extreme viewports, drag-resize of both sidebars, and the editable shortcut table.
 
 ---
 
 ## Roadmap
 
-Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Also shipped as experimental: the **desktop shell** (#6, Electron; native PTYs still to come). Persistence (#1) is delivered by the workspace state file plus in-app full-text search; SQLite only becomes necessary for histories larger than the browser should hold. Still planned: public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped: real shell for live agents (POSIX rewrites on Windows), guided tour and accent colours, canvas beside chat, keyboard shortcut editor (#2), publish with preflight (#4), notebook renderer **and execution** (#3, #7), cross-browser persistence via the workspace state file plus in-app full-text search (#1 — SQLite only becomes necessary for histories larger than the browser should hold), the ACP bridge for external agents (#5, validated against the reference agent), fence-based tools for models without native tool calling, automations, skills, a real browser tab, checkpoint rewind, error boundaries and focus traps, and cross-platform CI. Experimental: the **desktop shell** (#6, Electron; awaiting a report from a real machine, native PTYs to come). Still planned: public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## Changelog & license
 
