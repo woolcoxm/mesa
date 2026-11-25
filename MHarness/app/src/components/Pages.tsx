@@ -168,12 +168,4 @@ const AUTOS = [
   { id: 'a2', name: 'Revenue refresh', rrule: 'Every Monday · 08:00 America/New_York', target: 'New session', last: 'Mon · ok', on: true },
   { id: 'a3', name: 'GitHub issue → PR', rrule: 'webhook · issues.opened', target: 'New session', last: 'never', on: false },
 ];
-export function AutomationsPage() {
-  const [autos, setAutos] = useState(AUTOS);
-  return (
-    <div className="page">
-      <div className="page-head"><CalendarClock size={16} /><b>Automations</b><span className="spacer" /><button className="btn sm primary" onClick={() => import('../state/store').then((m) => m.toast('Task builder opens from any Run card → “Save as Task”', 'info'))}>+ New automation</button></div>
-      {autos.map((a) => <div key={a.id} className="automation"><span className={'rs ' + (a.on ? 'running' : 'exited')} /><div><b>{a.name}</b><div className="set-sub">{a.rrule} → {a.target}</div></div><span className="muted last-run">last run {a.last}</span><button className={'switch' + (a.on ? ' on' : '')} role="switch" aria-checked={a.on} onClick={() => setAutos((xs) => xs.map((x) => (x.id === a.id ? { ...x, on: !x.on } : x)))}><i /></button></div>)}
-    </div>
-  );
-}
+export { AutomationsPage } from './AutomationsPage';

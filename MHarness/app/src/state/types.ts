@@ -79,6 +79,7 @@ export interface Artifact {
 }
 
 export interface NotebookSpec { kernel?: string; language?: string; cells: { kind: 'code' | 'markdown'; source: string; execution_count?: number; outputs?: { type: 'text' | 'html' | 'image' | 'error'; value: string }[] }[] }
+export interface Automation { id: Id; name: string; prompt: string; everyMin: number; targetSessionId?: Id; on: boolean; lastRunAt?: number; nextRunAt?: number; lastSessionId?: Id; createdAt: number }
 export interface ChartSpec { title: string; labels: string[]; values: number[]; series?: string; color?: string }
 
 export interface Run {
@@ -172,6 +173,7 @@ export interface Settings {
   accent: string;
   tourDone: boolean;
   shortcuts: Record<string, string>;
+  automations: Automation[];
   provider?: { baseUrl: string; apiKey: string; model: string; preset: string; proxy: boolean; tools?: boolean };
 }
 

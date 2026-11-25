@@ -6,6 +6,7 @@ import { pickScenario, SEED_PLAN, type ArtifactSeed, type SceneStep, type Scenar
 import { estimateCostUsd, extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
 import { acpCancel, runAcpPrompt } from '../agent/acp';
 import { runNotebookCells as runNotebookCellsOnServer } from '../agent/notebook';
+import type { Automation } from './types';
 
 export const uid = (): Id => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -63,7 +64,7 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {} },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [] },
   canvasSplit: null,
   canvasArtifact: null,
   insert: null,
@@ -308,6 +309,46 @@ export async function runNotebookCells(sessionId: Id, artifactId: Id, cellIndexe
   toast(failed ? 'Notebook cell failed — see output' : 'Notebook cells ran', failed ? 'warning' : 'success');
 }
 export function isNotebookRunning(sessionId: Id) { return !!notebookRunning.get(sessionId); }
+
+// ---------- automations: prompts that run on a schedule while Mesa is open ----------
+export function upsertAutomation(input: Omit<Automation, 'id' | 'createdAt' | 'nextRunAt' | 'lastRunAt'> & { id?: Id }) {
+  const list = state.settings.automations;
+  if (input.id && list.some((a) => a.id === input.id)) {
+    updateSettings({ automations: list.map((a) => (a.id === input.id ? { ...a, ...input, nextRunAt: input.on ? Date.now() + input.everyMin * 60_000 : undefined } : a)) });
+  } else {
+    const a: Automation = { ...input, id: uid(), createdAt: Date.now(), nextRunAt: input.on ? Date.now() + input.everyMin * 60_000 : undefined };
+    updateSettings({ automations: [...list, a] });
+  }
+  toast(input.on ? 'Automation scheduled' : 'Automation saved (paused)', 'success');
+}
+export function toggleAutomation(id: Id, on: boolean) {
+  updateSettings({ automations: state.settings.automations.map((a) => (a.id === id ? { ...a, on, nextRunAt: on ? Date.now() + a.everyMin * 60_000 : undefined } : a)) });
+}
+export function removeAutomation(id: Id) { updateSettings({ automations: state.settings.automations.filter((a) => a.id !== id) }); toast('Automation removed', 'info'); }
+/** Runs an automation now: into its target session, or a fresh session named after it. */
+export function runAutomationNow(id: Id) {
+  const a = state.settings.automations.find((x) => x.id === id); if (!a) return;
+  let session = a.targetSessionId ? state.sessions.find((s) => s.id === a.targetSessionId) : undefined;
+  if (!session) {
+    const created = newSession({ title: a.name });
+    state = { ...state, sessions: [created, ...state.sessions], activeSessionId: created.id };
+    session = created;
+  }
+  if (session.state === 'running' || session.state === 'awaiting') {
+    const q: QueuedMsg = { id: uid(), text: a.prompt, mode: 'queue' };
+    updateSession(session.id, (ss) => { ss.queued = [...ss.queued, q]; });
+  } else startTurn(session.id, a.prompt);
+  updateSettings({ automations: state.settings.automations.map((x) => (x.id === id ? { ...x, lastRunAt: Date.now(), lastSessionId: session!.id, nextRunAt: x.on ? Date.now() + x.everyMin * 60_000 : undefined } : x)) });
+  toast(`Automation · ${a.name} started`, 'info');
+}
+let schedulerStarted = false;
+export function startScheduler() {
+  if (schedulerStarted) return; schedulerStarted = true;
+  window.setInterval(() => {
+    const now = Date.now();
+    for (const a of state.settings.automations) if (a.on && a.nextRunAt && a.nextRunAt <= now) runAutomationNow(a.id);
+  }, 15_000);
+}
 
 /** One turn driven by an external ACP agent (see agent/acp.ts); the agent process is owned by scripts/serve.mjs. */
 export async function runAcpTurn(sessionId: Id, turnId: Id) {

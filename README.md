@@ -133,6 +133,12 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 
 `MHarness/desktop` is a tiny Electron shell: it starts the Mesa server itself (real shell, notebook execution and ACP included) and opens the built app in its own window — no browser tab, links go to your system browser. `pnpm install && pnpm start` in that folder; `pnpm smoke` verifies the window loads. It is untested on other machines so far, so please report back on [#6](https://github.com/woolcoxm/mesa/issues/6).
 
+### Automations
+
+![Scheduled prompts in the Automations page](docs/screenshots/33-automations.png)
+
+**Automations** (left rail) schedule a prompt to run every N minutes or hours while Mesa is open — into a session you pick, or a fresh session each time. Each run streams like any other turn (approvals included), the row shows a live countdown to the next run and when it last ran, and **Run now** fires it immediately.
+
 ---
 
 ## Keyboard

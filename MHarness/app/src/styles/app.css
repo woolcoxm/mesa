@@ -846,3 +846,13 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 /* ---------- attachment chips ---------- */
 .attached-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 .attached-chip { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--mesa-accent-soft); color: var(--mesa-accent); animation: pop var(--mesa-m-fast) var(--mesa-e-spring) both; }
+/* ---------- automations ---------- */
+.automation { align-items: flex-start; gap: 10px; }
+.auto-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.auto-main i { color: var(--mesa-text-muted); }
+.auto-meta { display: flex; gap: 8px; align-items: center; font-size: 11px; flex-wrap: wrap; }
+.automation .link-btn { font-size: 11px; }
+.auto-form { margin-top: 14px; padding: 14px; border: 1px solid var(--mesa-border-subtle); border-radius: var(--mesa-r-lg); background: var(--mesa-bg-surface); display: flex; flex-direction: column; gap: 10px; }
+.af-grid { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 10px; }
+.auto-form textarea { width: 100%; resize: vertical; }
+.af-actions { display: flex; align-items: center; gap: 8px; }

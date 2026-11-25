@@ -2,12 +2,13 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { seed, getState, renameSession, closeCanvas, closeCheat, closePublish, openCheat, openPage, setActive, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
 import { resolveShortcutEvent } from './state/shortcuts';
-import { subscribe, toast } from './state/store';
+import { startScheduler, subscribe, toast } from './state/store';
 import './styles/tokens.css';
 import './styles/app.css';
 
 async function boot() {
   await seed();
+  startScheduler();
   // Uncaught errors surface as toasts instead of failing silently; error boundaries keep rendering bugs inside their pane.
   window.addEventListener('error', (e) => { if (e.message && !(e.target instanceof HTMLElement)) toast('Unhandled error: ' + e.message.slice(0, 90), 'error'); });
   window.addEventListener('unhandledrejection', (e) => { toast('Unhandled promise: ' + String((e.reason as Error)?.message ?? e.reason).slice(0, 90), 'error'); });
