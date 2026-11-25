@@ -3,7 +3,7 @@ import {
   Layers, Play, Share2, Pin, PinOff, FileCode2, ChartColumn, AppWindow, FileText, Table2, TestTube2, GitCompare, Sparkles, Bot, Check, Loader2, AlertTriangle, Clock, Target, History, Globe, ArrowRight, SplitSquareHorizontal, Rows3, RotateCcw, ExternalLink, Camera, MousePointerClick, FileDiff, ListChecks,
 } from 'lucide-react';
 import { CHART_HTML } from '../agent/scenarios';
-import { focusCall, openBesideChat, openPublish, pinArtifact, runNotebookCells, send, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
+import { focusCall, openBesideChat, openPublish, pinArtifact, restoreCheckpoint, runNotebookCells, send, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
 const focusComposer = () => { const el = document.querySelector('.composer-input') as HTMLTextAreaElement | null; el?.focus(); };
 import type { Artifact, ArtifactKind, DiffInfo, Session, TLEvent, ToolCall } from '../state/types';
 import { AdhocBanner, Markdown } from './Markdown';
@@ -201,11 +201,16 @@ function Sparkline({ values, labels }: { values: number[]; labels: string[] }) {
 }
 export function TimelineTab({ session }: { session: Session }) {
   const maxMs = Math.max(1, ...session.timeline.map((e) => e.ms ?? 0));
+  const [filter, setFilter] = useState<'all' | TLEvent['kind']>('all');
+  const kinds = ['all', 'turn', 'tool', 'run', 'approval', 'artifact', 'checkpoint'] as const;
+  const events = session.timeline.filter((e) => filter === 'all' || e.kind === filter || (filter === 'tool' && e.kind === 'present'));
   return (
     <div className="tab-scroll">
       <div className="tab-head"><History size={14} /><b>Timeline</b><span className="muted">{session.timeline.length} events</span></div>
-      {session.checkpoints.length > 0 && <div className="checkpoints">{session.checkpoints.map((c) => <button key={c.id} className="cp" onClick={() => toast(`Checkpoint "${c.label}" — restore is a demo action`, 'info')}><RotateCcw size={12} />{c.label}{c.auto && <span className="tag">auto</span>}</button>)}</div>}
-      <div className="tl">{session.timeline.map((e, i) => { const Icon = TL_ICON[e.kind]; return <div key={e.id} className={'tl-row k-' + e.kind + (e.callId ? ' clickable' : '')} style={{ animationDelay: `${Math.min(300, i * 20)}ms` }} onClick={() => e.callId && focusCall(e.callId)} title={e.callId ? 'Jump to this call in the thread' : undefined}><span className="tl-time">{new Date(e.ts).toLocaleTimeString([], { hour12: false })}</span><span className="tl-icon"><Icon size={11} /></span><span className="tl-label">{e.label}</span>{e.ms ? <span className="tl-bar"><i style={{ width: `${Math.max(4, (e.ms / maxMs) * 100)}%` }} /></span> : null}{e.ms ? <span className="tl-ms">{(e.ms / 1000).toFixed(1)}s</span> : null}</div>; })}</div>
+      {session.checkpoints.length > 0 && <div className="checkpoints">{session.checkpoints.map((c) => <button key={c.id} className="cp" title="Rewind the session to this point" onClick={() => { if (window.confirm(`Rewind to “${c.label}”? Turns and artifacts after it are removed (the timeline keeps the record).`)) restoreCheckpoint(session.id, c.id); }}><RotateCcw size={12} />{c.label}{c.auto && <span className="tag">auto</span>}</button>)}</div>}
+      {session.timeline.length > 8 && <div className="filters tl-filters">{kinds.map((k) => <button key={k} className={'filter' + (filter === k ? ' on' : '')} onClick={() => setFilter(k)}>{k === 'all' ? 'All' : k === 'tool' ? 'Tools' : k[0].toUpperCase() + k.slice(1) + 's'}</button>)}</div>}
+      <div className="tl">{events.map((e, i) => { const Icon = TL_ICON[e.kind] ?? Sparkles; return <div key={e.id} className={'tl-row k-' + e.kind + (e.callId ? ' clickable' : '')} style={{ animationDelay: `${Math.min(300, i * 20)}ms` }} onClick={() => e.callId && focusCall(e.callId)} title={e.callId ? 'Jump to this call in the thread' : undefined}><span className="tl-time">{new Date(e.ts).toLocaleTimeString([], { hour12: false })}</span><span className="tl-icon"><Icon size={11} /></span><span className="tl-label">{e.label}</span>{e.ms ? <span className="tl-bar"><i style={{ width: `${Math.max(4, (e.ms / maxMs) * 100)}%` }} /></span> : null}{e.ms ? <span className="tl-ms">{(e.ms / 1000).toFixed(1)}s</span> : null}</div>; })}</div>
+      {session.timeline.length > 0 && !events.length && <div className="menu-empty">No {filter} events.</div>}
       {!session.timeline.length && <EmptyTab icon={<History size={22} />} text="No events yet" sub="Every tool call, run, approval and artifact is recorded here." action={{ label: 'Start a conversation', run: focusComposer }} />}
     </div>
   );

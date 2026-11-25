@@ -243,6 +243,24 @@ export function setCheckpoint(sessionId: Id, label: string, auto = false) {
   updateSession(sessionId, (ss) => { ss.checkpoints = [...ss.checkpoints, cp]; });
   pushTimeline(sessionId, { label: `checkpoint · ${label}`, kind: 'checkpoint' });
 }
+/** Rewinds the session to a checkpoint: turns, artifacts, runs and agents created after it are removed (the timeline keeps the record). */
+export function restoreCheckpoint(sessionId: Id, checkpointId: Id) {
+  const s = state.sessions.find((x) => x.id === sessionId); const cp = s?.checkpoints.find((c) => c.id === checkpointId); if (!s || !cp) return;
+  const at = cp.at;
+  const droppedTurns = s.turns.filter((t) => t.startedAt > at).length;
+  if (!droppedTurns && s.artifacts.every((a) => (a.createdAt ?? 0) <= at)) { toast('Nothing to rewind — the session is already at this point', 'info'); return; }
+  updateSession(sessionId, (ss) => {
+    ss.turns = ss.turns.filter((t) => t.startedAt <= at);
+    ss.artifacts = ss.artifacts.filter((a) => (a.createdAt ?? 0) <= at);
+    ss.runs = ss.runs.filter((r) => r.startedAt <= at);
+    ss.state = 'idle'; ss.pendingApproval = undefined; ss.cancel = undefined; ss.queued = [];
+    ss.checkpoints = ss.checkpoints.filter((c) => c.at <= at);
+  });
+  if (state.showcase?.sessionId === sessionId) state = { ...state, showcase: null };
+  if (state.canvasArtifact?.sessionId === sessionId) state = { ...state, canvasArtifact: null };
+  pushTimeline(sessionId, { label: `checkpoint restored · ${cp.label} (rewound ${droppedTurns} turn${droppedTurns === 1 ? '' : 's'})`, kind: 'checkpoint' });
+  toast(`Rewound to “${cp.label}”`, 'success');
+}
 
 export function insertIntoComposer(text: string) { state = { ...state, insert: { text, n: Date.now() } }; emit(); }
 export function clearInsert() { if (state.insert) { state = { ...state, insert: null }; } }

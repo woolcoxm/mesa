@@ -36,6 +36,8 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | **Live preview** — sandboxed iframe (no `allow-same-origin`), device sizes, console/network capture, screenshot-to-chat, element-to-agent. HTML code blocks in chat have a **Run** button. | **Run console** — real xterm PTY tabs per session, background jobs with kill/restart/notify, a simulated shell you can type into (`ls`, `git status`, `pnpm test`…). |
 | ![Files & diffs](docs/screenshots/06-files-diffs.png) | ![Agents board](docs/screenshots/07-agents-board.png) |
 | **Files & diffs** — unified or split view, animated hunk reveals, "Explain this hunk" sends the hunk to the agent, hover peeks on every diff chip. | **Agents** — subagent tree with status and cost, or a kanban board of the plan. |
+| ![Timeline](docs/screenshots/08-timeline.png) | ![Run console](docs/screenshots/05-run-console.png) |
+| **Timeline** — every event with its timing bar, filter chips by kind, rows jump to the call in the thread, and checkpoints that genuinely **rewind** the session to that point. | **Run console** — real xterm terminals per session, background jobs with kill/restart/notify, a simulated shell you can type into. |
 | ![Gallery](docs/screenshots/09-gallery.png) | ![Command palette](docs/screenshots/11-palette.png) |
 | **Gallery** — every deliverable across sessions: filters, search, detail view, side-by-side compare, re-run with fresh inputs, share links. | **Command palette** — fuzzy, keyboard-first; every tab, mode, demo and session is one keystroke away. |
 | ![Settings](docs/screenshots/10-settings.png) | ![Light theme](docs/screenshots/14-light-shell.png) |
