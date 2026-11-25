@@ -41,6 +41,11 @@ try {
   check('non-zero exit code propagates', r2.exit === 3, JSON.stringify(r2));
   const r3 = await run('node -e "console.log(require(\'os\').platform())"', '..');
   check('cwd outside the repo is refused (403)', r3.status === 403, r3.status);
+  // POSIX staples agents reach for (head/tail/wc) work on every host OS — Windows rewrites them to PowerShell.
+  const r4 = await run('head -n 1 README.md');
+  check('head -n works on this OS', r4.exit === 0 && /# Mesa/.test(r4.lines.join('\n')), JSON.stringify(r4));
+  const r5 = await run('wc -l README.md');
+  check('wc -l works on this OS', r5.exit === 0 && /^\d+/.test(r5.lines.join('').trim()), JSON.stringify(r5));
   const cfg = await fetch(url + '/__mesa/config');
   check('config endpoint answers', cfg.ok);
   const mock = await fetch(url + '/__mesa/mock/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: 'mesa-mock', messages: [{ role: 'user', content: 'echo:hi' }] }) });

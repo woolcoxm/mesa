@@ -123,11 +123,13 @@ Settings → **Agent → Live model**. Answers stream into the thread; `reasonin
 | Preset | Base URL | Notes |
 |---|---|---|
 | **Z.AI Coding Plan** | `https://api.z.ai/api/coding/paas/v4` | GLM-4.6 / GLM-4.5-Air with your coding-plan key. Supports tool calling. |
-| **Strata (local)** | `http://10.0.0.169:8080/v1` | Your local router; press **Fetch models** to read `/models`. Strata hangs on requests carrying `tools`, so tool calling defaults **off** there and the fence-based prompt is used. |
+| **Strata (local)** | `http://10.0.0.169:8080/v1` | Your local router; press **Fetch models** to read `/models`. Strata hangs on requests carrying `tools`, so native tool calling is **off** there — and Mesa switches to **fence-based tools** instead (below). |
 | OpenAI / Custom | any | Any OpenAI-compatible endpoint. |
 | **Mesa mock (offline)** | served by `scripts/serve.mjs` | Scripted model that exercises the full tool loop (bash → approval → present_html) with no key or network. `echo:` prompts stream back verbatim — handy for testing markdown rendering. |
 
 **Tool calling** (`present_html`, `bash`, `read_file`) runs up to 4 rounds per turn; `bash` goes through the approval takeover unless the preset is Full access, then runs for real (if the real shell is enabled) or in the simulated sandbox. A 120 s first-byte watchdog turns a silent hang into a clear error.
+
+**Fence-based tools** — models without native tool calling (Strata) get a system prompt that lets them ask for a shell command with a single ` ```bash ` fence. Mesa turns each fence into a real tool row behind the approval takeover (with the auto-review verdict), runs it, and hands the output back as the next message so the model continues — up to three command rounds per turn. The real Strata model, asked to list the repository, ran `ls -1 .` and then followed up with further commands on its own. On Windows, `head`, `tail`, `wc -l`, `touch` and `mkdir -p` are rewritten to their PowerShell/cmd equivalents so POSIX-minded models keep working.
 
 **Mesa proxy** — requests to other origins are routed through `/proxy?u=…` in `scripts/serve.mjs`, which forwards only `content-type`/`authorization` to an allow-list (`api.z.ai`, `api.openai.com`, `10.0.0.169`; extend with `PROXY_ALLOW=host1,host2`). This avoids browser CORS on endpoints that don't send CORS headers. Keys stay in your browser's `localStorage`.
 

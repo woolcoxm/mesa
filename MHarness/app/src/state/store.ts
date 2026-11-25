@@ -854,8 +854,13 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
     allText += result.text + '\n';
     outTokens += Math.round((result.text.length + result.toolCalls.reduce((n, c) => n + c.function.arguments.length, 0)) / 4);
     updateTurn(sessionId, turnId, (t) => { t.blocks = t.blocks.filter((b) => b.id !== blockId || (b.type === 'text' && b.text.trim().length > 0)).map((b) => (b.id === blockId && b.type === 'text' ? { ...b, streaming: false } : b)); });
-    if (!result.toolCalls.length) break;
-    messages.push({ role: 'assistant', content: result.text || '', tool_calls: result.toolCalls });
+    if (!result.toolCalls.length) {
+      // No native tool calling (e.g. Strata): honour ```bash fences as shell requests instead, for up to three rounds.
+      const fences = useTools ? [] : [...result.text.matchAll(/```(?:bash|sh|shell)[ \t]*\n([\s\S]*?)```/g)].map((m) => m[1].trim()).filter(Boolean);
+      if (!fences.length || round >= 3) break;
+      result = { ...result, toolCalls: fences.map((c) => ({ id: uid(), type: 'function' as const, function: { name: 'bash', arguments: JSON.stringify({ command: c }) } })) };
+    }
+    messages.push(useTools ? { role: 'assistant', content: result.text || '', tool_calls: result.toolCalls } : { role: 'assistant', content: result.text || '' });
 
     for (const call of result.toolCalls) {
       if (turnCancelled(sessionId, turnId)) break;
@@ -921,7 +926,8 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
       } else { output = `unknown tool: ${name}`; ok = false; }
 
       updateCall(sessionId, turnId, tb, (c) => { c.status = ok ? 'success' : 'error'; c.endedAt = Date.now(); c.ms = Date.now() - toolCall.startedAt; c.output = output; });
-      messages.push({ role: 'tool', tool_call_id: call.id, content: output.slice(0, 4000) });
+      // Native tool calling gets tool-role results; fence mode (no tools) gets the output as the next user message.
+      messages.push(useTools ? { role: 'tool', tool_call_id: call.id, content: output.slice(0, 4000) } : { role: 'user', content: `Output of \`${title}\` (exit ${ok ? 0 : 1}):\n\`\`\`\n${output.slice(0, 4000)}\n\`\`\`\nContinue from here — run at most two more commands if you still need to, then summarise.` });
     }
   }
 

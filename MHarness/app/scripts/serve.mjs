@@ -97,13 +97,21 @@ async function runShell(req, res) {
   const send = (obj) => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(obj)}\n\n`); };
   const isWin = process.platform === 'win32';
   // Small POSIX→cmd alias table so agent-issued `ls`/`cat` behave on Windows.
-  const aliases = { ls: 'dir /b', 'ls -la': 'dir', cat: 'type', pwd: 'cd', clear: 'cls', which: 'where', rm: 'del', mv: 'move', cp: 'copy' };
+  const aliases = { ls: 'dir /b', 'ls -la': 'dir', cat: 'type', pwd: 'cd', clear: 'cls', which: 'where', rm: 'del', mv: 'move', cp: 'copy', touch: 'type nul >', 'rm -rf': 'rmdir /s /q', 'mkdir -p': 'mkdir' };
   let cmdLine = command;
   if (isWin) {
-    const first = command.split(/\s+/).slice(0, 2).join(' ');
-    const one = command.split(/\s+/)[0];
-    const hit = aliases[first] && aliases[first] !== aliases[one] ? [first, aliases[first]] : aliases[one] ? [one, aliases[one]] : null;
-    if (hit) cmdLine = aliases[hit[0]] + command.slice(hit[0].length);
+    // Argument-taking POSIX staples that a plain prefix swap cannot express.
+    let m;
+    if ((m = /^head\s+(?:-n\s+)?(\d+)\s+(.+)$/.exec(command))) cmdLine = `powershell -NoProfile -Command "Get-Content -TotalCount ${m[1]} '${m[2]}'"`;
+    else if ((m = /^head\s+([^-].*)$/.exec(command))) cmdLine = `powershell -NoProfile -Command "Get-Content -TotalCount 10 '${m[1]}'"`;
+    else if ((m = /^tail\s+(?:-n\s+)?(\d+)\s+(.+)$/.exec(command))) cmdLine = `powershell -NoProfile -Command "Get-Content -Tail ${m[1]} '${m[2]}'"`;
+    else if ((m = /^wc\s+-l\s+(.+)$/.exec(command))) cmdLine = `powershell -NoProfile -Command "(Get-Content '${m[1]}').Count"`;
+    else {
+      const first = command.split(/\s+/).slice(0, 2).join(' ');
+      const one = command.split(/\s+/)[0];
+      const hit = aliases[first] && aliases[first] !== aliases[one] ? [first, aliases[first]] : aliases[one] ? [one, aliases[one]] : null;
+      if (hit) cmdLine = aliases[hit[0]] + command.slice(hit[0].length);
+    }
   }
   // /s strips the outer quotes so inner quotes survive: cmd /d /s /c "node -e "console.log(1)""
   // POSIX: the user's login shell ($SHELL — bash, zsh, fish…) with -c, so PATH tools like node/pnpm resolve as expected.
@@ -384,7 +392,9 @@ async function mockChat(req, res) {
     await reason('The workspace has src/. Now I will present the page as an artifact.');
     await call('call_present_1', 'present_html', JSON.stringify({ title: 'Glowing Click Counter', html: MOCK_HTML }));
   } else if (last.role === 'user' && !hasTools) {
-    await text('Here is a tiny self-contained HTML page with a glowing button that counts clicks.\n\n```html\n' + MOCK_HTML + '\n```\n');
+    // Fence mode (no native tools): ask for a shell command first, then present the page once the output comes back.
+    if (/^Output of `/.test(String(last.content))) { await text('The workspace has `src/`. Here is a tiny self-contained HTML page with a glowing button that counts clicks.\n\n```html\n' + MOCK_HTML + '\n```\n'); }
+    else { await text('Let me look at the workspace first.\n\n```bash\nls\n```\n'); }
     await send({ delta: {}, finish_reason: 'stop' });
   } else {
     await text('Done — I built **Glowing Click Counter** and presented it as an artifact. Open the preview and click the button to verify the count updates.');
