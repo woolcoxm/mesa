@@ -4,7 +4,7 @@ import {
   Plus, Search, Bot, CalendarClock, Puzzle, Settings, ChevronDown, ChevronRight, PanelLeftClose, Layers, Sparkles, X,
 } from 'lucide-react';
 import { deleteSession, newSessionAction, openPage, setActive, setDockTab, setRailSearch, setSidebarWidth, renameSession, toggleGroup, toggleRail, toggleGallery, togglePalette } from '../state/store';
-import type { Session } from '../state/types';
+import type { Id, Session } from '../state/types';
 import { useStore } from '../state/useStore';
 
 const GROUPS = ['Today', 'Yesterday', 'This week', 'Project: mesa'];
@@ -22,6 +22,8 @@ function StateDot({ s }: { s: Session }) {
 export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
   const st = useStore();
   const [renaming, setRenaming] = useState<string | null>(null);
+  const [peek, setPeek] = useState<{ id: Id; top: number } | null>(null);
+  const peekTimer = useRef<number | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const open = st.rail.open && !forceCollapsed && st.settings.sidebarWidth > 80;
   const filtered = useMemo(() => {
@@ -63,11 +65,21 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
             </button>
             {!st.rail.collapsed[g] && grouped[g].map((s) => (
               <div key={s.id} className={'session-row' + (s.id === st.activeSessionId ? ' active' : '')} role="treeitem" aria-selected={s.id === st.activeSessionId} tabIndex={0}
-                onClick={() => setActive(s.id)} onKeyDown={(e) => { if (e.key === 'Enter') setActive(s.id); }} onDoubleClick={() => setRenaming(s.id)}>
+                onClick={() => setActive(s.id)} onKeyDown={(e) => { if (e.key === 'Enter') setActive(s.id); }} onDoubleClick={() => setRenaming(s.id)}
+                onMouseEnter={(e) => { if (peekTimer.current) clearTimeout(peekTimer.current); const top = e.currentTarget.getBoundingClientRect().top; peekTimer.current = window.setTimeout(() => setPeek({ id: s.id, top }), 450); }}
+                onMouseLeave={() => { if (peekTimer.current) clearTimeout(peekTimer.current); setPeek(null); }}>
                 <StateDot s={s} />
                 {renaming === s.id ? (
                   <input autoFocus className="rename" defaultValue={s.title} onBlur={(e) => { renameSession(s.id, (e.target as HTMLInputElement).value); setRenaming(null); }} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
                 ) : (<><span className="s-title">{s.title}</span><span className="s-time">{timeAgo(s.updatedAt)}</span><button className="s-del" title="Delete session" onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${s.title}"?`)) deleteSession(s.id); }}><X size={12} /></button></>)}
+                {peek?.id === s.id && s.turns.length > 0 && (
+                  <div className="peek rail-peek" role="tooltip" style={{ top: Math.min(peek.top, window.innerHeight - 190) }}>
+                    <div className="peek-head"><span className={'rs ' + (s.state === 'running' ? 'running' : s.state === 'awaiting' ? 'awaiting' : 'exited')} />{s.title}</div>
+                    <div className="rp-q">{s.turns[s.turns.length - 1].user}</div>
+                    {(() => { const last = [...s.turns].reverse().find((t) => t.blocks.some((b) => b.type === 'text' && b.text))?.blocks.filter((b) => b.type === 'text').map((b) => (b as Extract<typeof b, { type: 'text' }>).text).join(' ') ?? ''; return last ? <div className="rp-a">{last}</div> : null; })()}
+                    <div className="rp-meta">{s.turns.length} turn{s.turns.length === 1 ? '' : 's'} · {s.artifacts.length} artifact{s.artifacts.length === 1 ? '' : 's'}{s.artifacts.some((a) => a.pinned) ? ' · pinned' : ''}</div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

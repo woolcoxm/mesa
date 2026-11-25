@@ -860,3 +860,10 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 
 .scope-rules { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .scope-rule { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 10px; border-radius: 999px; font-size: 11.5px; background: var(--mesa-accent-soft); color: var(--mesa-accent); }
+
+/* ---------- session peek (rail hover) ---------- */
+.peek.rail-peek { position: fixed; left: calc(var(--sidebar-w, 260px) + 10px); width: 320px; max-width: 40vw; z-index: 70; pointer-events: none; }
+.rail-peek .peek-head { display: flex; align-items: center; gap: 6px; }
+.rp-q { font-weight: 600; font-size: 12px; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-a { font-size: 11.5px; color: var(--mesa-text-secondary); line-height: 1.45; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rp-meta { font-size: 10.5px; color: var(--mesa-text-muted); margin-top: 8px; }

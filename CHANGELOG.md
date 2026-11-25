@@ -8,6 +8,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Toasts anchor just above the composer (tracking its height) instead of under the header, so they never cover the showcase title or the composer controls.
 - Long sessions render their last 30 turns first with a "Show earlier turns" button (keeps the thread fast at any length).
 - Pressing **N** reuses an untouched "New session" instead of piling up empty duplicates.
+- **Session peek**: hover a session in the rail to see its last question, the start of the last answer and turn/artifact counts.
 
 ### Fixed
 - **"Always allow for this repo" now sticks**: the approval scope is remembered per tool for the workspace (dangerous shell patterns still prompt; ACP permission requests can be remembered too), and Settings → Permissions lists the rules with a revoke button — previously the choice only allowed the one command.

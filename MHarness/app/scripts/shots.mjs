@@ -100,6 +100,10 @@ await shot('24-stats-sparkline');
 await page.keyboard.press('Control+Shift+g'); await page.waitForTimeout(500);
 await shot('09-gallery');
 await esc();
+// 36 — hover a session in the rail to peek its last exchange
+await page.locator('.session-row', { hasText: 'Analyse revenue' }).first().hover(); await page.waitForTimeout(700);
+await shot('36-session-peek');
+await page.mouse.move(720, 500); await page.waitForTimeout(150);
 
 // 11 — palette
 await page.locator('.thread').click({ position: { x: 5, y: 5 } }); await page.keyboard.press('Control+k'); await page.waitForTimeout(300);
