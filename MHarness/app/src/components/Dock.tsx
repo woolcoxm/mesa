@@ -3,7 +3,7 @@ import {
   Layers, Play, Share2, Pin, PinOff, FileCode2, ChartColumn, AppWindow, FileText, Table2, TestTube2, GitCompare, Sparkles, Bot, Check, Loader2, AlertTriangle, Clock, Target, History, Globe, ArrowRight, SplitSquareHorizontal, Rows3, RotateCcw, ExternalLink, Camera, MousePointerClick, FileDiff, ListChecks,
 } from 'lucide-react';
 import { CHART_HTML } from '../agent/scenarios';
-import { focusCall, openBesideChat, openPublish, pinArtifact, send, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
+import { focusCall, openBesideChat, openPublish, pinArtifact, runNotebookCells, send, setDockTab, toggleGallery, toast, insertIntoComposer } from '../state/store';
 const focusComposer = () => { const el = document.querySelector('.composer-input') as HTMLTextAreaElement | null; el?.focus(); };
 import type { Artifact, ArtifactKind, DiffInfo, Session, TLEvent, ToolCall } from '../state/types';
 import { AdhocBanner, Markdown } from './Markdown';
@@ -263,7 +263,7 @@ export function PreviewTab({ session }: { session: Session }) {
       <div className="preview-stage">
         <div className="device" style={device === 0 ? { width: '100%', height: '100%' } : { width: s.w, height: s.h }}>
           {show ? (
-            show.kind === 'chart' ? <ChartView a={show} /> : show.kind === 'notebook' && show.notebook ? <div className="nb-wrap"><NotebookView artifact={show} /></div> : show.kind === 'app' || show.kind === 'html' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={show.html ?? ''} /> : show.code ? <div className="doc-view"><Markdown text={docText} /></div> : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />
+            show.kind === 'chart' ? <ChartView a={show} /> : show.kind === 'notebook' && show.notebook ? <div className="nb-wrap"><NotebookView artifact={show} runnable onRun={(cells) => runNotebookCells(session.id, show.id, cells)} /></div> : show.kind === 'app' || show.kind === 'html' ? <iframe title="preview" sandbox="allow-scripts" srcDoc={show.html ?? ''} /> : show.code ? <div className="doc-view"><Markdown text={docText} /></div> : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />
           ) : <EmptyTab icon={<AppWindow size={22} />} text="Nothing to preview" sub="Build an app or ask for a chart." action={{ label: 'Build a dashboard app', run: () => send('Build a small flashy dashboard app with Vite') }} />}
         </div>
       </div>

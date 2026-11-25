@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const port = 5199;
 const url = `http://127.0.0.1:${port}`;
-const server = spawn(process.execPath, [join(here, 'serve.mjs')], { env: { ...process.env, PORT: String(port), MESA_SHELL: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
+const server = spawn(process.execPath, [join(here, 'serve.mjs')], { env: { ...process.env, PORT: String(port), MESA_SHELL: '1', MESA_ACP_MOCK: '1', MESA_NOTEBOOK: process.env.MESA_NOTEBOOK ?? '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
 let log = '';
 server.stdout.on('data', (d) => { log += d; });
 server.stderr.on('data', (d) => { log += d; });
@@ -45,6 +45,27 @@ try {
   check('config endpoint answers', cfg.ok);
   const mock = await fetch(url + '/__mesa/mock/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: 'mesa-mock', messages: [{ role: 'user', content: 'echo:hi' }] }) });
   check('offline mock streams', mock.ok && (await mock.text()).includes('hi'));
+  // Notebook execution (MESA_NOTEBOOK=1): two cells in one process share state; a failing cell stops the run.
+  const nb = await (await fetch(url + '/__mesa/notebook/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ cells: ['x = 20', 'print(x + 1)', 'print(1 / 0)', 'print("never")'] }) })).json();
+  check('notebook: cells share state in one process', nb.cells?.[1]?.output?.trim() === '21' && nb.exitCode === 1, JSON.stringify(nb));
+  check('notebook: failing cell reports its own traceback and halts', nb.cells?.[2]?.failed === true && /ZeroDivisionError/.test(nb.cells[2].output) && !nb.cells[3].output, JSON.stringify(nb.cells?.[2]).slice(0, 120));
+  // ACP bridge (MESA_ACP_MOCK=1): attach, stream a prompt, expect a done event.
+  const attach = await (await fetch(url + '/__mesa/acp/attach', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mesaSessionId: 'smoke' }) })).json();
+  check('acp: agent attaches (initialize + session/new)', !!attach.agentSessionId, JSON.stringify(attach));
+  const events = await new Promise(async (resolve) => {
+    const ctrl = new AbortController(); const out = [];
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const r = await fetch(url + '/__mesa/acp/events?session=smoke', { signal: ctrl.signal });
+      await fetch(url + '/__mesa/acp/prompt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mesaSessionId: 'smoke', text: 'smoke: hello' }) });
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '';
+      while (true) { const { value, done } = await reader.read(); if (done) break; buf += dec.decode(value); let i; while ((i = buf.indexOf('\n\n')) >= 0) { const line = buf.slice(0, i); buf = buf.slice(i + 2); if (line.startsWith('data: ')) { const ev = JSON.parse(line.slice(6)); out.push(ev); if (ev.type === 'done' || ev.type === 'error') { ctrl.abort(); } } } }
+    } catch { /* aborted after done */ }
+    clearTimeout(timer); resolve(out);
+  });
+  const types = events.map((e) => e.type);
+  const text = events.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
+  check('acp: prompt streams thought + chunks + done', types.includes('thought') && types.includes('chunk') && types.includes('done') && text.includes('ACP bridge online'), types.join(',') + ' | ' + text.slice(0, 80));
 } catch (e) {
   check('smoke run threw', false, e.message);
 } finally {

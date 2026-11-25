@@ -47,7 +47,7 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Canvas beside chat](docs/screenshots/19-canvas-beside.png) | ![Publish with preflight](docs/screenshots/21-publish.png) |
 | **Canvas beside chat** — "Beside chat" on any app, chart or notebook deliverable opens it live in a resizable pane next to the thread (the rail auto-collapses to make room); drag the edge, `Esc` to close, "Dock" to move it back. | **Publish with preflight** — Share on an HTML deliverable scans it first (private keys, `sk-…`/AWS/GitHub/Stripe tokens, hard-coded secrets, source maps, untrusted external scripts, localhost links), refuses anything with a blocking finding, and otherwise serves it from your Mesa server at a copyable link you can open or remove. |
 | ![Notebook beside chat](docs/screenshots/22-notebook-beside.png) | ![Stats with token sparkline](docs/screenshots/24-stats-sparkline.png) |
-| **Notebook renderer** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (text, images, HTML in a sandboxed frame); "Convert to script" downloads the code cells. | **Stats** — context, cache hit, cost (estimated from list pricing when the model is known) and a per-turn token sparkline with hover tooltips; the timeline tab shows every event's timing. |
+| **Notebooks that actually run** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (HTML in a sandboxed frame). Press **Run** on a cell or **Run all**: the cells execute in one real Python process on the Mesa host (state carries between cells, per-cell tracebacks, timeouts), the Run console records the run, and the cells fill with live output. "Convert to script" downloads the code cells. | **Stats** — context, cache hit, cost (estimated from list pricing when the model is known) and a per-turn token sparkline with hover tooltips; the timeline tab shows every event's timing. |
 
 Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands.
 
@@ -84,6 +84,10 @@ Mesa looks for `MHarness/app/mesa.config.json` (git-ignored) and applies it on l
 ```
 
 Without it, the app starts in **Demo** mode, which needs no network or keys.
+
+### Notebook execution (optional)
+
+Add `"notebook": { "command": "python" }` to `mesa.config.json` and the **Run** buttons on notebook cells come alive: the server writes the cells to a temp file inside the repository, runs them in one interpreter process (shared state, per-cell markers splitting the output, a failing cell stops the run with its own traceback, 30 s timeout and 64 KB output caps), and the cells fill with the real output. Running a single cell replays the cells before it so its state is present, exactly like re-running from the top in Jupyter. Without the setting the Run buttons explain what to add.
 
 ### Real shell (optional)
 
@@ -177,7 +181,7 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Roadmap
 
-Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Still planned: SQLite + FTS5 for large histories (#1), notebook cell execution against a kernel (#7), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
+Tracked as GitHub issues. Shipped so far: real shell for live agents, guided tour and accent colours, canvas beside chat, **keyboard shortcut editor** (#2), **publish with preflight** (#4, local hosting), **notebook renderer** (#3, read-only), cross-browser persistence via the workspace state file (part of #1), cross-platform CI with a real-shell smoke test, and the **ACP bridge** for external agents (#5, validated against the reference agent). Still planned: SQLite + FTS5 for large histories (#1), desktop shell with native PTYs (#6), public hosting for published links. The original 12-week plan is in [`MHarness-design/09-roadmap.md`](MHarness-design/09-roadmap.md).
 
 ## Changelog & license
 

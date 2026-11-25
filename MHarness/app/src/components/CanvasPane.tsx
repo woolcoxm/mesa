@@ -1,5 +1,5 @@
 import { X, PanelRight, GitCompare } from 'lucide-react';
-import { closeCanvas, setCanvasSplit, setDockTab, pinArtifact } from '../state/store';
+import { closeCanvas, setCanvasSplit, setDockTab, pinArtifact, runNotebookCells } from '../state/store';
 import type { Artifact, Session } from '../state/types';
 import { ChartView, EmptyTab, HtmlThumb, kindMeta } from './Dock';
 import { Markdown } from './Markdown';
@@ -33,7 +33,7 @@ export function CanvasPane({ session, artifact, width }: { session: Session; art
       <div className="canvas-body">
         {artifact.html ? <iframe title={artifact.title} sandbox="allow-scripts" srcDoc={artifact.html} />
           : artifact.kind === 'chart' && artifact.chart ? <ChartView a={artifact} />
-          : artifact.notebook ? <div className="nb-wrap"><NotebookView artifact={artifact} /></div>
+          : artifact.notebook ? <div className="nb-wrap"><NotebookView artifact={artifact} runnable onRun={(cells) => runNotebookCells(session.id, artifact.id, cells)} /></div>
           : artifact.code ? <div className="doc-view"><Markdown text={docText} /></div>
           : <EmptyTab icon={<span style={{ fontSize: 18 }}>✦</span>} text="Nothing to render" sub="This artifact has no preview." />}
       </div>

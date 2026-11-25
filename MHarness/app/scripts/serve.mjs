@@ -21,9 +21,15 @@ const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 // Optional bootstrap config: mesa.config.json → { provider: {...}, agent: 'live' | 'demo', shell: boolean }.
 let bootConfig = {};
 try { bootConfig = JSON.parse(await readFile(join(root, '..', 'mesa.config.json'), 'utf8')); } catch { /* none */ }
+// Test/CI knobs: MESA_NOTEBOOK=1 enables notebook execution with `python` on PATH; MESA_ACP_MOCK=1 registers the reference ACP agent.
+if (process.env.MESA_NOTEBOOK && !bootConfig.notebook) bootConfig.notebook = { command: process.env.MESA_NOTEBOOK === '1' ? 'python' : process.env.MESA_NOTEBOOK };
+if (process.env.MESA_ACP_MOCK === '1' && !bootConfig.acp) bootConfig.acp = { command: process.execPath, args: [fileURLToPath(import.meta.url).replace(/serve\.mjs$/, 'mock-acp-agent.mjs')] };
 // Real shell for live agents is opt-in: "shell": true in mesa.config.json or MESA_SHELL=1. Always gated by the in-app approval takeover.
 const shellEnabled = bootConfig.shell === true || process.env.MESA_SHELL === '1';
 
+// A failing handler must never take the whole dev server down (a stuck tab is worse than a 500).
+process.on('uncaughtException', (e) => { console.error('mesa: uncaught in a request handler —', e instanceof Error ? e.message : e); });
+process.on('unhandledRejection', (e) => { console.error('mesa: unhandled rejection —', e instanceof Error ? e.message : e); });
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
   if (url.pathname === '/proxy') return proxy(req, res, url);
@@ -41,6 +47,9 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/__mesa/acp/cancel' && req.method === 'POST') return acpCancel(req, res);
   if (url.pathname === '/__mesa/acp/permission' && req.method === 'POST') return acpPermission(req, res);
   if (url.pathname === '/__mesa/acp/events') return acpEvents(req, res, url);
+  // Notebook execution — the interpreter comes from mesa.config.json ("notebook": { "command": "python" }); code runs from a temp file inside the repository.
+  if (url.pathname === '/__mesa/notebook/status') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); return res.end(JSON.stringify({ configured: !!bootConfig.notebook?.command, command: bootConfig.notebook?.command ?? null })); }
+  if (url.pathname === '/__mesa/notebook/run' && req.method === 'POST') return notebookRun(req, res);
   if (url.pathname.startsWith('/__mesa/publish/') && req.method === 'DELETE') return unpublish(url, res);
   if (url.pathname === '/__mesa/config') {
     // Local-only bootstrap config (mesa.config.json next to package.json). Served only to this origin.
@@ -261,6 +270,50 @@ function acpEvents(req, res, url) {
   if (!entry) { res.end(); return; }
   entry.clients.add(res);
   req.on('close', () => entry.clients.delete(res));
+}
+
+// ---------- notebook execution ----------
+// Cells run in ONE interpreter process with a per-cell wrapper: state carries over between cells, each cell's output is
+// delimited by a marker, and a failing cell prints its traceback, stops the run and reports exit 1.
+const CELL_MARK = (i, suffix = '') => `\u0000MESA_CELL_${i}${suffix}\u0000`;
+function wrapPythonCells(cells) {
+  return cells.map((src, i) => [`print(${JSON.stringify(CELL_MARK(i))}, end="")`, 'try:', `    exec(compile(${JSON.stringify(src)}, f"<cell ${i + 1}>", "exec"), g)`, 'except Exception:', '    traceback.print_exc()', `    print(${JSON.stringify(CELL_MARK(i, '_FAIL'))}, end="")`, '    sys.exit(1)', ''].join('\n')).join('\n');
+}
+async function notebookRun(req, res) {
+  const cfg = bootConfig.notebook; if (!cfg?.command) { res.writeHead(400, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ error: 'Notebook execution is not configured — add "notebook": { "command": "python" } to mesa.config.json and restart serve.mjs.' })); }
+  const b = await readJsonBody(req);
+  const cells = Array.isArray(b?.cells) ? b.cells.map((c) => String(c ?? '')) : [String(b?.code ?? '')];
+  if (!cells.length || cells.some((c) => !c.trim()) || cells.join('\n').length > 200_000) { res.writeHead(400); return res.end(JSON.stringify({ error: 'empty or too large' })); }
+  const started = Date.now();
+  const dir = join(root, '.tmp'); await mkdir(dir, { recursive: true });
+  const file = join(dir, `notebook-${process.pid}-${started}.py`);
+  await writeFile(file, 'import sys, traceback\ng = {"__name__": "__main__"}\n' + wrapPythonCells(cells), 'utf8');
+  const out = await new Promise((resolve) => {
+    let stdout = '', stderr = '';
+    const child = spawn(cfg.command, [...(cfg.args ?? []), file], { cwd: workspaceRoot, env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    const cap = (s) => (s.length > 64_000 ? s.slice(0, 64_000) + '\n… output truncated' : s);
+    child.stdout.on('data', (d) => { stdout += d; }); child.stderr.on('data', (d) => { stderr += d; });
+    const timer = setTimeout(() => { child.kill(); stderr += `\nmesa: killed after ${cfg.timeoutMs ?? 30_000} ms`; }, cfg.timeoutMs ?? 30_000);
+    child.on('exit', (exitCode) => { clearTimeout(timer); resolve({ exitCode: exitCode ?? -1, stdout: cap(stdout), stderr: cap(stderr) }); });
+    child.on('error', (e) => { clearTimeout(timer); resolve({ exitCode: -1, stdout: cap(stdout), stderr: '', error: `${cfg.command}: ${e.message}` }); });
+  });
+  await rm(file, { force: true });
+  // Walk the stream: each cell marker starts a new segment; a _FAIL marker flags that cell; text before the first marker is startup noise.
+  const tokens = out.stdout.split(/(\u0000MESA_CELL_\d+(?:_FAIL)?\u0000)/);
+  const results = cells.map(() => ({ output: '', failed: false }));
+  let current = -1;
+  for (const t of tokens) {
+    const m = /^\u0000MESA_CELL_(\d+)(_FAIL)?\u0000$/.exec(t);
+    if (m) { if (m[2]) { if (results[Number(m[1])]) results[Number(m[1])].failed = true; } else current = Number(m[1]); continue; }
+    if (current >= 0 && results[current]) results[current].output += t;
+  }
+  for (const r of results) r.output = r.output.trimEnd();
+  const exitCode = out.error ? -1 : (out.exitCode ?? -1);
+  const firstFail = results.findIndex((r) => r.failed);
+  if (out.stderr) { const k = firstFail >= 0 ? firstFail : 0; results[k].output = (results[k].output + '\n' + out.stderr.trim()).trim(); results[k].failed = firstFail >= 0 || exitCode !== 0; }
+  if (out.error) results[0].failed = true;
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify({ cells: results, exitCode, stderr: out.stderr.trim(), error: out.error, ms: Date.now() - started }));
 }
 
 async function proxy(req, res, url) {

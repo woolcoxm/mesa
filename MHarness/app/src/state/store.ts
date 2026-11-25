@@ -5,6 +5,7 @@ import type {
 import { pickScenario, SEED_PLAN, type ArtifactSeed, type SceneStep, type Scenario } from '../agent/scenarios';
 import { estimateCostUsd, extractHtmlArtifacts, runShellStream, streamChat, SYSTEM_PROMPT_FENCE, SYSTEM_PROMPT_TOOLS, TOOLS, type ChatMessage, type StreamResult } from '../agent/provider';
 import { acpCancel, runAcpPrompt } from '../agent/acp';
+import { runNotebookCells as runNotebookCellsOnServer } from '../agent/notebook';
 
 export const uid = (): Id => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -207,6 +208,9 @@ export function restartRun(sessionId: Id, runId: Id) {
   pushTimeline(sessionId, { label: `run ${r.command}`, kind: 'run' });
   toast(`Restarted ${r.command}`, 'info');
 }
+export function updateArtifact(sessionId: Id, artifactId: Id, patch: (a: Artifact) => void) {
+  updateSession(sessionId, (s) => { s.artifacts = s.artifacts.map((a) => { if (a.id !== artifactId) return a; const copy = { ...a, notebook: a.notebook ? { ...a.notebook, cells: a.notebook.cells.map((c) => ({ ...c, outputs: c.outputs ? [...c.outputs] : undefined })) } : undefined }; patch(copy as Artifact); return copy; }); });
+}
 export function pinArtifact(sessionId: Id, artifactId: Id) {
   updateSession(sessionId, (s) => { s.artifacts = s.artifacts.map((a) => (a.id === artifactId ? { ...a, pinned: !a.pinned } : a)); });
   const a = state.sessions.find((s) => s.id === sessionId)?.artifacts.find((x) => x.id === artifactId);
@@ -245,6 +249,46 @@ export function closePublish() { state = { ...state, publish: null }; emit(); }
 export function setTour(step: number | null) { state = { ...state, tour: step }; emit(); }
 export function isLiveAgent() { const p = state.settings.provider; return state.settings.agent === 'live' && !!p?.baseUrl && (!!p.apiKey || p.preset === 'mock'); }
 export function isAcpAgent() { return state.settings.agent === 'acp'; }
+
+const notebookRunning = new Map<Id, boolean>();
+/** Runs the given code cells of a notebook artifact with the server-configured interpreter (explicit user action, like the terminal). Outputs stream into the Run console and then into the cells. */
+/** Runs the given code cells of a notebook artifact with the server-configured interpreter (explicit user action, like the terminal).
+ *  Cells execute in one process, so a cell sees everything the cells before it defined; "Run" on cell N replays cells 1..N and shows N's output. */
+export async function runNotebookCells(sessionId: Id, artifactId: Id, cellIndexes: number[]) {
+  if (notebookRunning.get(sessionId)) return;
+  const s0 = state.sessions.find((x) => x.id === sessionId); const a0 = s0?.artifacts.find((a) => a.id === artifactId);
+  if (!s0 || !a0?.notebook) return;
+  const targets = [...new Set(cellIndexes)].filter((i) => a0.notebook!.cells[i]?.kind === 'code').sort((a, b) => a - b);
+  if (!targets.length) return;
+  notebookRunning.set(sessionId, true);
+  const lastTarget = targets[targets.length - 1];
+  // Everything up to the last target runs so state carries over; only the targets' outputs are replaced.
+  const prefix = a0.notebook.cells.map((c, i) => (c.kind === 'code' && i <= lastTarget ? i : -1)).filter((i) => i >= 0);
+  const sources = prefix.map((i) => a0.notebook!.cells[i].source);
+  const nextCount = () => Math.max(0, ...(state.sessions.find((x) => x.id === sessionId)?.artifacts.find((a) => a.id === artifactId)?.notebook?.cells.map((c) => c.execution_count ?? 0) ?? [])) + 1;
+  const run: Run = { id: uid(), sessionId, owner: 'user', runtime: 'host', command: `python · ${targets.length > 1 ? `${targets.length} cells` : `cell ${targets[0] + 1}`}`, cwd: '.', preset: s0.preset, status: 'running', startedAt: Date.now(), lines: [`$ ${a0.title} · ${targets.length} cell${targets.length === 1 ? '' : 's'}`], background: false };
+  updateSession(sessionId, (s) => { s.runs = [...s.runs, run]; });
+  for (const i of targets) updateArtifact(sessionId, artifactId, (a) => { if (a.notebook) a.notebook.cells[i] = { ...a.notebook.cells[i], outputs: [{ type: 'text', value: '' }] }; });
+  if (state.dock.tab === 'run') selectRun(sessionId, run.id);
+  const push = (line: string) => updateSession(sessionId, (s) => { s.runs = s.runs.map((r) => (r.id === run.id ? { ...r, lines: [...r.lines, line] } : r)); });
+  push(`# running ${prefix.length} cell(s) for state`);
+  const r = await runNotebookCellsOnServer(sources);
+  for (const i of targets) {
+    const j = prefix.indexOf(i); const res = r.cells[j] ?? { output: '', failed: true };
+    const n = nextCount();
+    const text = [res.output, j === 0 && r.error ? `mesa: ${r.error}` : '', r.exitCode !== 0 && !res.output ? `exit ${r.exitCode}` : ''].filter(Boolean).join('\n');
+    updateArtifact(sessionId, artifactId, (a) => { if (a.notebook) a.notebook.cells[i] = { ...a.notebook.cells[i], execution_count: n, outputs: [{ type: res.failed ? 'error' : 'text', value: (text || `(no output)`) + `\n\n(${r.ms} ms, exit ${res.failed ? 1 : 0})` }] }; });
+    if (res.output) push(`# In [${n}]\n${res.output}`); if (res.failed) push(`# cell ${i + 1} failed`);
+    if (res.failed) break;
+  }
+  notebookRunning.set(sessionId, false);
+  const failed = r.cells.some((c) => c.failed) || r.exitCode !== 0;
+  updateSession(sessionId, (s) => { s.runs = s.runs.map((rr) => (rr.id === run.id ? { ...rr, status: failed ? 'failed' : 'exited', exitCode: failed ? 1 : 0, endedAt: Date.now() } : rr)); });
+  push(`exit ${failed ? 1 : 0}`);
+  pushTimeline(sessionId, { label: `notebook · ${targets.length} cell${targets.length === 1 ? '' : 's'} · exit ${failed ? 1 : 0}`, kind: 'run', ms: Date.now() - run.startedAt });
+  toast(failed ? 'Notebook cell failed — see output' : 'Notebook cells ran', failed ? 'warning' : 'success');
+}
+export function isNotebookRunning(sessionId: Id) { return !!notebookRunning.get(sessionId); }
 
 /** One turn driven by an external ACP agent (see agent/acp.ts); the agent process is owned by scripts/serve.mjs. */
 export async function runAcpTurn(sessionId: Id, turnId: Id) {
