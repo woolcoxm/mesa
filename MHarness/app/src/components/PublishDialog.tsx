@@ -1,3 +1,4 @@
+import { useFocusTrap } from './useFocusTrap';
 import { useEffect, useState } from 'react';
 import { X, ShieldCheck, AlertTriangle, OctagonAlert, Link2, Copy, ExternalLink, Trash2, Sparkles, Check } from 'lucide-react';
 import { useStore } from '../state/useStore';
@@ -7,6 +8,7 @@ import { listPublished, preflight, publishHtml, unpublish, type PreflightIssue }
 /** Publish an HTML artifact to a local URL after a preflight scan (secrets, source maps, external scripts). */
 export function PublishDialog() {
   const st = useStore();
+  const trap = useFocusTrap<HTMLDivElement>(!!st.publish);
   const target = st.publish;
   const session = target ? st.sessions.find((s) => s.id === target.sessionId) : undefined;
   const artifact = target ? session?.artifacts.find((a) => a.id === target.artifactId) : undefined;
@@ -28,7 +30,7 @@ export function PublishDialog() {
   const askFix = () => { insertIntoComposer(`Before I publish "${artifact.title}", fix these preflight findings:\n${issues.map((i) => `- [${i.level}] ${i.label}: ${i.fix ?? ''}`).join('\n')}\n\nThen present the corrected page again.`); closePublish(); };
   return (
     <div className="overlay publish-overlay" role="dialog" aria-label="Publish" onMouseDown={(e) => { if (e.target === e.currentTarget) closePublish(); }}>
-      <div className="publish">
+      <div className="publish" ref={trap}>
         <div className="publish-head"><span className="pub-mark">⇪</span><div><b>Publish · {artifact.title}</b><div className="set-sub">Static hosting from your Mesa server · preflight runs before anything goes live</div></div><span className="spacer" /><button className="icon-btn" onClick={closePublish} title="Close (Esc)"><X size={16} /></button></div>
         <div className="publish-body">
           <div className="pub-section-title"><ShieldCheck size={13} /> Preflight</div>

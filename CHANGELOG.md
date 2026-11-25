@@ -20,6 +20,8 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - **Desktop shell (experimental, #6)** — `MHarness/desktop`: Electron window that starts the Mesa server and loads the built app; `pnpm smoke` verifies it loads. Could not be launched from the build environment's sandbox, so it awaits a report from a real desktop.
 - **Error boundaries** around every pane and dialog (recovery card: Retry / Copy details / Reset workspace) and **global error toasts** for uncaught errors and rejected promises.
 - Palette: New terminal, Pin / Beside chat / Publish the latest artifact, Keyboard cheat sheet.
+- **Focus traps** in the publish dialog, cheat sheet, gallery and palette: focus moves in on open, Tab/Shift+Tab cycle inside, and focus returns to the trigger on close.
+- Gallery: Notebook filter chip.
 
 ### Fixed
 - Preview tab kept the segment chosen in a previous session (could show a code doc instead of the session's app); it now resets to each session's headline deliverable and never points at a segment the session lacks.

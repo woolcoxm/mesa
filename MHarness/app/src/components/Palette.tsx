@@ -1,3 +1,4 @@
+import { useFocusTrap } from './useFocusTrap';
 import { startTour } from './Tour';
 import { sc } from '../state/platform';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -10,6 +11,7 @@ type Cmd = { id: string; t: string; k: string; icon: typeof Plus; run: () => voi
 
 export function Palette() {
   const st = useStore();
+  const trap = useFocusTrap<HTMLDivElement>(st.palette.open);
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
   const input = useRef<HTMLInputElement>(null);
@@ -68,7 +70,7 @@ export function Palette() {
   if (!open) return null;
   return (
     <div className="overlay palette-overlay" onMouseDown={close}>
-      <div className="palette" role="dialog" aria-label="Command palette" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="palette" ref={trap} role="dialog" aria-label="Command palette" onMouseDown={(e) => e.stopPropagation()}>
         <div className="palette-input"><Search size={16} /><input ref={input} placeholder="Type a command or search…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => {
           if (e.key === 'ArrowDown') { e.preventDefault(); setIdx((i) => Math.min(commands.length - 1, i + 1)); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); setIdx((i) => Math.max(0, i - 1)); }

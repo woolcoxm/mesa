@@ -1,3 +1,4 @@
+import { useFocusTrap } from './useFocusTrap';
 import { X, Search } from 'lucide-react';
 import { useState } from 'react';
 import { chordToLabel, effectiveChord, SHORTCUT_DEFS } from '../state/shortcuts';
@@ -10,6 +11,7 @@ import { startTour } from './Tour';
 export function CheatSheet() {
   const st = useStore();
   const [q, setQ] = useState('');
+  const trap = useFocusTrap<HTMLDivElement>(!!st.cheat);
   if (!st.cheat) return null;
   const overrides = st.settings.shortcuts ?? {};
   const groups = ['Global', 'Session', 'Dock'] as const;
@@ -17,7 +19,7 @@ export function CheatSheet() {
   const matches = (label: string) => !query || label.toLowerCase().includes(query);
   return (
     <div className="overlay cheat-overlay" role="dialog" aria-label="Keyboard shortcuts" onMouseDown={(e) => { if (e.target === e.currentTarget) closeCheat(); }}>
-      <div className="cheat">
+      <div className="cheat" ref={trap}>
         <div className="cheat-head"><kbd>?</kbd><b>Keyboard shortcuts</b><span className="muted">matched by physical key · editable in Settings → Keyboard</span><span className="spacer" /><div className="rail-search inline"><Search size={13} /><input autoFocus placeholder="Filter shortcuts" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter shortcuts" /></div><button className="icon-btn" onClick={closeCheat} title="Close (Esc)"><X size={16} /></button></div>
         <div className="cheat-body">
           {groups.map((g) => {

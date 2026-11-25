@@ -1,3 +1,4 @@
+import { useFocusTrap } from './useFocusTrap';
 import { useMemo, useState } from 'react';
 import { X, Search, Pin, Layers, GitCompare, RotateCcw, Share2, Sparkles, Tag, ArrowLeft } from 'lucide-react';
 import { getState, setGalleryFilter, toggleGallery, toast } from '../state/store';
@@ -8,10 +9,11 @@ import { NotebookView, notebookThumb } from './NotebookView';
 import { Markdown } from './Markdown';
 import type { Artifact } from '../state/types';
 
-const KINDS = ['all', 'app', 'chart', 'code', 'markdown', 'table', 'test-report'];
+const KINDS = ['all', 'app', 'chart', 'notebook', 'code', 'markdown', 'table', 'test-report'];
 
 export function Gallery() {
   const st = useStore();
+  const trap = useFocusTrap<HTMLDivElement>(st.gallery.open);
   const g = st.gallery;
   const items = useMemo(() => {
     const all = st.sessions.flatMap((s) => s.artifacts.map((a) => ({ a, s })));
@@ -23,13 +25,13 @@ export function Gallery() {
   if (!g.open) return null;
   return (
     <div className="overlay gallery-overlay" role="dialog" aria-label="Gallery" onMouseDown={() => toggleGallery(false)}>
-      <div className="gallery" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="gallery" ref={trap} onMouseDown={(e) => e.stopPropagation()}>
         <div className="gallery-head">
           <Layers size={16} /><b>Gallery</b><span className="muted">{items.length} artifacts · {items.filter((i) => i.a.pinned).length} pinned</span><span className="spacer" />
           <div className="rail-search inline"><Search size={13} /><input placeholder="Search deliverables across sessions" value={g.query} onChange={(e) => setGalleryFilter({ query: e.target.value })} /></div>
           <button className="icon-btn" onClick={() => toggleGallery(false)} title="Close (Esc)"><X size={16} /></button>
         </div>
-        <div className="filters">{KINDS.map((k) => <button key={k} className={'filter' + (g.kind === k ? ' on' : '')} onClick={() => setGalleryFilter({ kind: k })}>{k}</button>)}</div>
+        <div className="filters">{KINDS.map((k) => <button key={k} className={'filter' + (g.kind === k ? ' on' : '')} onClick={() => setGalleryFilter({ kind: k })}>{k === 'all' ? 'All' : k === 'test-report' ? 'Test report' : k[0].toUpperCase() + k.slice(1)}</button>)}</div>
         {sel ? (
           <div className="gallery-detail">
             <button className="chip-btn" onClick={() => setGalleryFilter({ selected: undefined, compareWith: undefined })}><ArrowLeft size={11} />Back</button>
