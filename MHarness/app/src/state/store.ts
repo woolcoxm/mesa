@@ -425,9 +425,15 @@ export function deleteSession(id: Id) {
   emit();
   toast('Session deleted', 'info', undefined, { label: 'Undo', run: () => { state = { ...state, sessions: [...state.sessions.slice(0, index), removed, ...state.sessions.slice(index)] }; emit(); } }, 7000);
 }
-export function notify(title: string, body: string) {
+export function notify(title: string, body: string, sessionId?: Id) {
   if (!state.settings.notifications) return;
-  try { if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) new Notification(title, { body }); } catch { /* blocked */ }
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+      const n = new Notification(title, { body });
+      // Clicking a notification brings that session to the front.
+      n.onclick = () => { if (sessionId) setActive(sessionId); window.focus(); n.close(); };
+    }
+  } catch { /* blocked */ }
 }
 export async function requestNotifyPermission(): Promise<NotificationPermission | 'unsupported'> {
   try { if (typeof Notification === 'undefined') return 'unsupported'; return await Notification.requestPermission(); } catch { return 'unsupported'; }
@@ -633,7 +639,7 @@ function triggerShowcase(sessionId: Id, turnId: Id) {
   state = { ...state, showcase: { sessionId, turnId, minimized: false, entering: true } };
   emit();
   const n = state.sessions.find((s) => s.id === sessionId)?.turns.find((t) => t.id === turnId)?.deliverables.length ?? 0;
-  notify('Mesa · deliverables ready', `${n} deliverable${n === 1 ? '' : 's'} in ${state.sessions.find((s) => s.id === sessionId)?.title ?? 'session'}`);
+  notify('Mesa · deliverables ready', `${n} deliverable${n === 1 ? '' : 's'} in ${state.sessions.find((s) => s.id === sessionId)?.title ?? 'session'}`, sessionId);
   if (state.settings.effects && n >= 3) {
     const dock = state.dock.open ? (window.innerWidth * state.settings.dockWidth) / 100 : 0;
     setTimeout(() => { state = { ...state, confetti: { n: Date.now(), x: window.innerWidth - dock - 260, y: 120 } }; emit(); }, 380);
@@ -674,7 +680,7 @@ async function requestApproval(sessionId: Id, turnId: Id, blockId: Id, callId: I
   updateCall(sessionId, turnId, blockId, (c) => { c.status = 'awaiting-approval'; c.approval = approval; });
   updateSession(sessionId, (s) => { s.pendingApproval = approval; s.state = 'awaiting'; });
   pushTimeline(sessionId, { label: `approval requested · ${approval.title}`, kind: 'approval', callId });
-  if (!instant) notify('Mesa needs your approval', `${approval.title} · ${state.sessions.find((x) => x.id === sessionId)?.title ?? ''}`);
+  if (!instant) notify('Mesa needs your approval', `${approval.title} · ${state.sessions.find((x) => x.id === sessionId)?.title ?? ''}`, sessionId);
   if (instant) {
     updateSession(sessionId, (s) => { s.pendingApproval = undefined; s.state = 'running'; });
     return { action: 'allow-once' };

@@ -159,7 +159,7 @@ The dock's **Browser** tab is a small framed browser: it opens the session's lat
 
 ![Hold Ctrl to reveal shortcut badges](docs/screenshots/23-key-hints.png) ![Press ? for the cheat sheet](docs/screenshots/25-cheat-sheet.png)
 
-Hold **Ctrl/⌘** to reveal every available shortcut as a badge on its control, or press **`?`** for a searchable cheat sheet. Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
+Hold **Ctrl/⌘** to reveal every available shortcut as a badge on its control, or press **`?`** for a searchable cheat sheet. **↑/↓** walk the session list (Enter opens), **←/→** pick a card in the completion showcase (Enter opens it), and clicking a system notification brings its session to the front. Every shortcut is **editable** in Settings → Keyboard (click a chord, press the new one; conflicts are rejected; reset one or all). Chords are matched by physical key, so they work on any layout; on macOS primary chords use ⌘ and secondary ones ⌃, so browser shortcuts are never stolen.
 
 | | | | |
 |---|---|---|---|

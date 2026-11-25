@@ -9,6 +9,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Long sessions render their last 30 turns first with a "Show earlier turns" button (keeps the thread fast at any length).
 - Pressing **N** reuses an untouched "New session" instead of piling up empty duplicates.
 - **Session peek**: hover a session in the rail to see its last question, the start of the last answer and turn/artifact counts.
+- Keyboard everywhere: **↑/↓** move between sessions in the rail (Enter opens), the completion showcase takes **←/→** to highlight a card and **Enter** to open it, and clicking a system notification brings its session to the front.
 
 ### Fixed
 - **"Always allow for this repo" now sticks**: the approval scope is remembered per tool for the workspace (dangerous shell patterns still prompt; ACP permission requests can be remembered too), and Settings → Permissions lists the rules with a revoke button — previously the choice only allowed the one command.

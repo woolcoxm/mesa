@@ -56,7 +56,7 @@ export function Rail({ forceCollapsed = false }: { forceCollapsed?: boolean }) {
         <input placeholder="Search sessions & messages" value={st.rail.search} onChange={(e) => setRailSearch(e.target.value)} aria-label="Search sessions" />
         <kbd>{sc('Ctrl+K')}</kbd>
       </div>
-      <div className="rail-sessions" role="tree" aria-label="Sessions">
+      <div className="rail-sessions" role="tree" aria-label="Sessions" onKeyDown={(e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const rows = [...e.currentTarget.querySelectorAll<HTMLElement>('.session-row')]; const i = rows.indexOf(document.activeElement as HTMLElement); const n = rows[(i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length]; if (n && n !== document.activeElement) n.focus(); } }}>
         {GROUPS.filter((g) => grouped[g]).map((g) => (
           <div key={g} className="rail-group">
             <button className="group-head" onClick={() => toggleGroup(g)} aria-expanded={!st.rail.collapsed[g]}>
