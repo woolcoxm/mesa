@@ -2,7 +2,7 @@ import { sc } from '../state/platform';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText, Pencil, Terminal as TerminalIcon, Eye, Globe, Search, Brain, Cpu, Play, Check, X, Loader2, Clock,
-  ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2, RotateCcw, Copy,
+  ChevronRight, ChevronDown, Image as ImageIcon, Sparkles, GitBranch, Database, Wand2, RotateCcw, Copy, Paperclip,
 } from 'lucide-react';
 import { Markdown } from './Markdown';
 import { insertIntoComposer, isAcpAgent, isLiveAgent, openAdhocPreview, selectRun, send, setDockTab, toast } from '../state/store';
@@ -91,7 +91,7 @@ function TurnCard({ turn, session, first }: { turn: Turn; session: Session; firs
   const secs = ((turn.endedAt ?? Date.now()) - turn.startedAt) / 1000;
   return (
     <div className={'turn' + (live ? ' live' : '')}>
-      <div className="user-bubble"><div className="user-avatar">you</div><div className="user-text">{turn.user}</div></div>
+      <div className="user-bubble"><div className="user-avatar">you</div><div className="user-text">{turn.user}{!!turn.attached?.length && <div className="attached-chips">{turn.attached.map((f) => <span key={f.id} className="attached-chip" title={`Contents of ${f.path} were sent to the agent`}><Paperclip size={11} />{f.title}</span>)}</div>}</div></div>
       <div className="agent-row">
         <div className="agent-avatar"><span className={live ? 'agent-mark pulse' : 'agent-mark'}>M</span></div>
         <div className="agent-body">

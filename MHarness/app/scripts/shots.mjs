@@ -143,6 +143,12 @@ await page.waitForSelector('.showcase', { timeout: 40000 }); await esc();
 await page.locator('.toolrow .icon-btn[title="Toggle output"]').first().click(); await page.waitForTimeout(200);
 await page.locator('.toolrow .chip-btn:has-text("console")').first().click(); await page.waitForTimeout(700);
 await shot('16-real-shell-console');
+// 31 — @attachments: chips under the message + contents echoed by the mock (the dashboard session has the files)
+await page.locator('.session-row', { hasText: 'Build a dashboard app' }).first().click(); await page.waitForTimeout(400);
+await page.locator('.composer-input').fill('echo: review @App.tsx and @styles.css'); await page.keyboard.press('Enter');
+await page.waitForFunction(() => !document.querySelector('.working') && !document.querySelector('.takeover'), null, { timeout: 30000 });
+await page.locator('.turn').last().scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
+await shot('31-attachments');
 
 // 17 — accent colour
 await settings();

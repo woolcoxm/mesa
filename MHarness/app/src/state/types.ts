@@ -110,6 +110,7 @@ export interface Turn {
   blocks: Block[];
   thinking?: string;
   deliverables: Id[];
+  attached?: { id: Id; title: string; path: string }[];
   usage: Usage;
 }
 

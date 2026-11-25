@@ -250,6 +250,25 @@ export function setTour(step: number | null) { state = { ...state, tour: step };
 export function isLiveAgent() { const p = state.settings.provider; return state.settings.agent === 'live' && !!p?.baseUrl && (!!p.apiKey || p.preset === 'mock'); }
 export function isAcpAgent() { return state.settings.agent === 'acp'; }
 
+/** Resolves `@name` references in a prompt against the session's artifacts and returns the prompt with the file contents appended. */
+export function expandAttachments(session: Session, text: string): { text: string; attached: { id: Id; title: string; path: string }[] } {
+  const refs = [...text.matchAll(/@([\w.\/-]+)/g)].map((m) => m[1]);
+  if (!refs.length) return { text, attached: [] };
+  const attached: { id: Id; title: string; path: string }[] = [];
+  const parts: string[] = [];
+  for (const ref of refs) {
+    const needle = ref.toLowerCase(); const name = needle.split('/').pop()!;
+    const a = [...session.artifacts].reverse().find((x) => [x.title.toLowerCase(), x.path.toLowerCase()].some((p) => p === needle || p.endsWith('/' + name) || p === name));
+    if (!a) continue;
+    const body = a.html ?? a.code ?? '';
+    if (!body.trim()) continue;
+    attached.push({ id: a.id, title: a.title, path: a.path });
+    parts.push(`### ${a.path}\n\`\`\`\n${body.slice(0, 4000)}${body.length > 4000 ? '\n… (truncated)' : ''}\n\`\`\``);
+  }
+  if (!parts.length) return { text, attached: [] };
+  return { text: `${text}\n\nAttached files (${attached.length}):\n\n${parts.join('\n\n')}`, attached };
+}
+
 const notebookRunning = new Map<Id, boolean>();
 /** Runs the given code cells of a notebook artifact with the server-configured interpreter (explicit user action, like the terminal). Outputs stream into the Run console and then into the cells. */
 /** Runs the given code cells of a notebook artifact with the server-configured interpreter (explicit user action, like the terminal).
@@ -302,7 +321,9 @@ export async function runAcpTurn(sessionId: Id, turnId: Id) {
   updateTurn(sessionId, turnId, (t) => { t.blocks.push({ id: blockId, type: 'text', text: '', streaming: true }); });
   pushTimeline(sessionId, { label: 'acp · session/prompt', kind: 'tool', callId: turnId });
   let textAll = '';
-  await runAcpPrompt(sessionId, turn.user, {
+  const { text: promptText, attached } = expandAttachments(s0, turn.user);
+  if (attached.length) updateTurn(sessionId, turnId, (t) => { t.attached = attached; });
+  await runAcpPrompt(sessionId, promptText, {
     appendText: (text) => { textAll += text; updateBlock(sessionId, turnId, blockId, (b) => { if (b.type === 'text') b.text += text; }); },
     appendThought: (text) => updateTurn(sessionId, turnId, (t) => { t.thinking = ((t.thinking ?? '') + text).slice(-600); }),
     addTool: (call) => updateTurn(sessionId, turnId, (t) => { t.blocks.push({ id: uid(), type: 'tool', call }); }),
@@ -695,7 +716,9 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
   const cfg = state.settings.provider!;
   const s0 = state.sessions.find((x) => x.id === sessionId); if (!s0) return;
   if (s0.model !== cfg.model) updateSession(sessionId, (s) => { s.model = cfg.model; });
-  const user = s0.turns.find((t) => t.id === turnId)!.user;
+  const userRaw = s0.turns.find((t) => t.id === turnId)!.user;
+  const { text: user, attached } = expandAttachments(s0, userRaw);
+  if (attached.length) updateTurn(sessionId, turnId, (t) => { t.attached = attached; });
   const useTools = cfg.tools ?? (cfg.preset !== 'strata'); // Strata's endpoint hangs on tool definitions
   const history = s0.turns.filter((t) => t.id !== turnId && t.status === 'done').slice(-6);
   const messages: ChatMessage[] = [

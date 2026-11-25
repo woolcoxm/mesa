@@ -843,3 +843,6 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 .tokenmeter.pulse svg { animation: meterPulse 1.2s ease-in-out infinite; }
 @keyframes meterPulse { 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .app, .center, .tokenmeter.pulse svg { animation: none; } }
+/* ---------- attachment chips ---------- */
+.attached-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.attached-chip { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--mesa-accent-soft); color: var(--mesa-accent); animation: pop var(--mesa-m-fast) var(--mesa-e-spring) both; }
