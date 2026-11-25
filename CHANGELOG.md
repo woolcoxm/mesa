@@ -24,6 +24,7 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Gallery: Notebook filter chip.
 - Hover any tool row to peek what it printed (like the diff chips); boot and session-switch transitions; the context meter pulses while a turn streams (all honour `prefers-reduced-motion`).
 - **Real attachments**: `@name` in a prompt resolves against the session's artifacts and the file contents are sent to the model or ACP agent (truncated at 4,000 chars each), with chips under the message showing what was attached.
+- Regression-checked live mode against the real local Strata endpoint (model list via the proxy, streamed answer, fenced HTML → app artifact + showcase).
 
 ### Fixed
 - Preview tab kept the segment chosen in a previous session (could show a code doc instead of the session's app); it now resets to each session's headline deliverable and never points at a segment the session lacks.

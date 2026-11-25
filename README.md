@@ -112,6 +112,8 @@ Mesa performs `initialize` → `session/new` → `session/prompt`, streams `agen
 
 ## Connecting a model
 
+![A real local model (Strata) delivering an app through Mesa](docs/screenshots/32-strata-live.png)
+
 Settings → **Agent → Live model**. Answers stream into the thread; `reasoning_content` is shown as the "Thought for a moment" row.
 
 | Preset | Base URL | Notes |
