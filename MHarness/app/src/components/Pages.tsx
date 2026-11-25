@@ -12,6 +12,13 @@ const ICON: Record<string, typeof Info> = { info: Info, success: Check, warning:
 
 export function Toasts() {
   const st = useStore();
+  // Anchor toasts just above the composer so they never cover the header, the showcase title or the composer controls.
+  useEffect(() => {
+    const measure = () => { const c = document.querySelector('.composer'); document.documentElement.style.setProperty('--composer-h', c ? `${c.getBoundingClientRect().height + 12}px` : '12px'); };
+    const ro = new ResizeObserver(measure); const c = document.querySelector('.composer'); if (c) ro.observe(c);
+    measure();
+    return () => ro.disconnect();
+  }, [st.page]);
   return (
     <div className="toasts" aria-live="polite">
       {st.toasts.map((t) => { const Icon = ICON[t.kind]; return <div key={t.id} className={'toast t-' + t.kind}><Icon size={14} /><span>{t.text}</span>{t.action && <button className="chip-btn on" onClick={() => { t.action!.run(); dismissToast(t.id); }}>{t.action.label}</button>}<button className="icon-btn sm" onClick={() => dismissToast(t.id)} aria-label="Dismiss"><X size={12} /></button></div>; })}
