@@ -53,6 +53,9 @@ await shot('01-shell-dark');
 
 // 02/03/04 — approval → showcase → preview
 await page.locator('.suggest button').first().click();
+// 28 — streaming with the live tok/s readout (captured mid-stream, before the approval)
+await page.waitForSelector('.tm-rate', { timeout: 8000 }).catch(() => {});
+await shot('28-streaming-rate');
 await page.waitForSelector('.takeover', { timeout: 25000 });
 await shot('02-approval');
 await page.locator('.tk-actions .btn.primary').click();

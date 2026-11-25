@@ -823,3 +823,5 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 .nb-cell.running .nb-source { opacity: .55; }
 .nb-cell.running .nb-gutter { color: var(--mesa-accent); }
 .spin { animation: spin 1s linear infinite; }
+.tm-rate { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; font-size: 9.5px; font-weight: 700; color: var(--mesa-accent); font-variant-numeric: tabular-nums; white-space: nowrap; animation: fadeIn var(--mesa-m-base) var(--mesa-e-out); }
+.tokenmeter { position: relative; }

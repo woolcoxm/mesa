@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Layers, Play, Share2, Pin, PinOff, FileCode2, ChartColumn, AppWindow, FileText, Table2, TestTube2, GitCompare, Sparkles, Bot, Check, Loader2, AlertTriangle, Clock, Target, History, Globe, ArrowRight, SplitSquareHorizontal, Rows3, RotateCcw, ExternalLink, Camera, MousePointerClick, FileDiff, ListChecks,
 } from 'lucide-react';
@@ -240,6 +240,9 @@ export function PreviewTab({ session }: { session: Session }) {
   const [device, setDevice] = useState(0);
   const [panel, setPanel] = useState<'console' | 'network' | 'none'>('none');
   const [mode, setMode] = useState<'app' | 'chart' | 'doc' | 'nb'>(app ? 'app' : chart ? 'chart' : notebook ? 'nb' : 'doc');
+  // The dock outlives session switches: never leave the segment on something this session does not have.
+  const effectiveMode = mode === 'app' ? (app || chart ? 'app' : chart ? 'chart' : notebook ? 'nb' : 'doc') : mode === 'chart' ? (chart ? 'chart' : 'app') : mode === 'nb' ? (notebook ? 'nb' : 'doc') : (doc ? 'doc' : app || chart ? 'app' : notebook ? 'nb' : 'doc');
+  useEffect(() => { if (effectiveMode !== mode) setMode(effectiveMode); }, [effectiveMode, mode]);
   const adhoc = useStore().adhoc;
   const sizes = [{ w: 0, h: 0, l: 'Fit' }, { w: 390, h: 844, l: 'Phone' }, { w: 768, h: 1024, l: 'Tablet' }, { w: 1440, h: 900, l: 'Desktop' }];
   const s = sizes[device];

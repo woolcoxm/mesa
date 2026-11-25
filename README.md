@@ -49,7 +49,7 @@ Design principles: **show, don't tell** · **verify is one click away** · **eve
 | ![Notebook beside chat](docs/screenshots/22-notebook-beside.png) | ![Stats with token sparkline](docs/screenshots/24-stats-sparkline.png) |
 | **Notebooks that actually run** — `.ipynb` deliverables render as cells with `In [n]` counts, markdown, code and outputs (HTML in a sandboxed frame). Press **Run** on a cell or **Run all**: the cells execute in one real Python process on the Mesa host (state carries between cells, per-cell tracebacks, timeouts), the Run console records the run, and the cells fill with live output. "Convert to script" downloads the code cells. | **Stats** — context, cache hit, cost (estimated from list pricing when the model is known) and a per-turn token sparkline with hover tooltips; the timeline tab shows every event's timing. |
 
-Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands.
+Small things that add up: deleting a session offers **Undo** for 7 seconds; **drop files** on the composer to attach them (HTML/SVG files open straight in the preview); the URL carries your place (`#/s/<session>/<tab>`) so a reload or a bookmark brings you back; the palette has **Accent · …** and **Density · …** commands; while a turn streams, the context meter shows a live **tok/s** readout.
 
 > Every screenshot above is regenerated from a deterministic demo run with `pnpm shots` (headless Chromium), so the pictures always match the current build.
 

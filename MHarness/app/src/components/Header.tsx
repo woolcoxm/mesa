@@ -1,5 +1,5 @@
 import { sc } from '../state/platform';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Zap, Target, Activity, Check, PanelRight, ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react';
 import { DOCK_TABS, killRun, restartRun, presetLabel, setDockTab, setMode, setModel, setPreset, toggleDock } from '../state/store';
 import type { Mode, Preset, Session } from '../state/types';
@@ -22,6 +22,12 @@ export function Header({ session }: { session: Session }) {
   const [menu, setMenu] = useState<'mode' | 'model' | 'preset' | 'jobs' | null>(null);
   const runningJobs = session.runs.filter((r) => r.status === 'running');
   const pct = session.tokens / session.contextMax;
+  // Live throughput: smoothed tokens/second while the active turn is streaming (chars/4 ≈ tokens).
+  const liveTurn = session.state === 'running' ? session.turns.find((t) => t.status === 'running') : undefined;
+  const liveLen = liveTurn ? liveTurn.blocks.reduce((n, b) => n + (b.type === 'text' ? b.text.length : 0), 0) : -1;
+  const rateRef = useRef<{ len: number; at: number; rate: number }>({ len: -1, at: 0, rate: 0 });
+  const [, bump] = useState(0);
+  useEffect(() => { const r = rateRef.current; if (liveLen < 0) { rateRef.current = { len: -1, at: 0, rate: 0 }; return; } const now = Date.now(); if (r.len < 0) { r.len = liveLen; r.at = now; return; } const dt = (now - r.at) / 1000; if (dt >= 0.4) { r.rate = r.rate * 0.4 + ((liveLen - r.len) / 4 / dt) * 0.6; r.len = liveLen; r.at = now; bump((x) => x + 1); } }, [liveLen]);
   const preset = PRESETS.find((p) => p.id === session.preset)!;
   const PresetIcon = preset.icon;
   return (
@@ -49,6 +55,7 @@ export function Header({ session }: { session: Session }) {
         <div className="tokenmeter" title={`Context ${session.tokens.toLocaleString()} / ${session.contextMax.toLocaleString()} tokens · cache ${(session.cacheHit * 100).toFixed(0)} %`}>
           <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden><circle cx="13" cy="13" r="10" className="tm-bg" /><circle cx="13" cy="13" r="10" className={'tm-fg' + (pct > 0.8 ? ' warn' : '')} strokeDasharray={`${pct * 62.8} 62.8`} transform="rotate(-90 13 13)" /></svg>
           <span className="tm-label">{pct > 0.8 ? 'Compact soon' : `${Math.round(pct * 100)} %`}</span>
+          {liveLen >= 0 && rateRef.current.rate > 1 && <span className="tm-rate" title="Streaming throughput (approximate)">{Math.round(rateRef.current.rate)} tok/s</span>}
         </div>
         <button className={'pill pill-jobs' + (runningJobs.length ? ' live' : '')} onClick={(e) => { e.stopPropagation(); setMenu(menu === 'jobs' ? null : 'jobs'); setDockTab('run'); }} title="Background jobs"><Zap size={13} />{runningJobs.length ? runningJobs.length : 'No jobs'}</button>
         {menu === 'jobs' && runningJobs.length > 0 && (

@@ -15,6 +15,10 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Toasts moved under the header so they can never cover the composer's Stop button.
 - **Notebook execution (#7)** — Run / Run all on notebook cells executes them in one real Python process on the Mesa host (state carries between cells, per-cell tracebacks, timeouts); the run is recorded in the Run console and the cells fill with live output. Opt in with `"notebook": { "command": "python" }`.
 - `serve.mjs` survives a throwing request handler (logged, not fatal).
+- Live **tok/s** readout under the context meter while a turn streams.
+
+### Fixed
+- Preview tab kept the segment chosen in a previous session (could show a code doc instead of the session's app); it now resets to each session's headline deliverable and never points at a segment the session lacks.
 
 ## [0.2.0] — 2026-11-24
 
