@@ -856,3 +856,4 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 .af-grid { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 10px; }
 .auto-form textarea { width: 100%; resize: vertical; }
 .af-actions { display: flex; align-items: center; gap: 8px; }
+.earlier-btn { display: block; margin: 8px auto 12px; font-size: 12px; }

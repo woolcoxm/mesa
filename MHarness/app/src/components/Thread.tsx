@@ -17,6 +17,7 @@ export function Thread({ session }: { session: Session }) {
   const ref = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   const [showJump, setShowJump] = useState(false);
+  const [limit, setLimit] = useState(30); // long sessions render the tail first; earlier turns load on demand
   const [jumpCount, setJumpCount] = useState(0);
   const lastLen = useRef(session.turns.length);
   const focus = useStore().focus;
@@ -44,7 +45,8 @@ export function Thread({ session }: { session: Session }) {
       <div ref={ref} className="thread" role="log" aria-live="polite" aria-busy={session.state === 'running'}>
         <div className="thread-inner">
           {session.turns.length === 0 && <EmptyThread />}
-          {session.turns.map((t, i) => <TurnCard key={t.id} turn={t} session={session} first={i === 0} />)}
+          {session.turns.length > limit && <button className="link-btn earlier-btn" onClick={() => setLimit((l) => l + 50)}>Show {Math.min(50, session.turns.length - limit)} earlier turn{Math.min(50, session.turns.length - limit) === 1 ? '' : 's'} · {session.turns.length - limit} hidden</button>}
+          {session.turns.slice(-limit).map((t, i) => <TurnCard key={t.id} turn={t} session={session} first={i === 0 && session.turns.length <= limit} />)}
         </div>
       </div>
       {showJump && <button className="jump" onClick={() => { pinned.current = true; setShowJump(false); const el = ref.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); }}>↓ Jump to latest{jumpCount ? ` (${jumpCount})` : ''}</button>}

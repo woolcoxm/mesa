@@ -158,8 +158,11 @@ export function setActive(id: Id) {
   emit();
 }
 export function newSessionAction() {
-  const s = newSession({ title: 'New session' });
+  // Reuse an untouched "New session" instead of piling up empty duplicates (even if it is the active one).
+  const empty = state.sessions.find((x) => x.title === 'New session' && x.turns.length === 0 && x.state === 'idle');
   if (state.showcase && !state.showcase.minimized) minimiseShowcase();
+  if (empty) { state = { ...state, activeSessionId: empty.id, page: 'session', canvasArtifact: null }; emit(); return empty.id; }
+  const s = newSession({ title: 'New session' });
   state = { ...state, sessions: [s, ...state.sessions], activeSessionId: s.id, page: 'session' };
   emit();
   return s.id;

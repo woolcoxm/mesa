@@ -6,6 +6,8 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 
 ### Changed
 - Toasts anchor just above the composer (tracking its height) instead of under the header, so they never cover the showcase title or the composer controls.
+- Long sessions render their last 30 turns first with a "Show earlier turns" button (keeps the thread fast at any length).
+- Pressing **N** reuses an untouched "New session" instead of piling up empty duplicates.
 
 ## [0.3.0] — 2026-11-24
 
