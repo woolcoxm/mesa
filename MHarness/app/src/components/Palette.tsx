@@ -2,7 +2,7 @@ import { startTour } from './Tour';
 import { sc } from '../state/platform';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, Moon, Sun, PanelRight, Layers, BellOff, PanelLeft, Sparkles, AppWindow, ChartColumn, TestTube2, GitBranch, Keyboard, Settings, Puzzle, CalendarClock, Cpu, Zap, Command } from 'lucide-react';
-import { exportSession, newSessionAction, openPage, send, setDockTab, setMode, toggleDock, toggleGallery, togglePalette, toggleRail, updateSettings, DOCK_TABS, setActive } from '../state/store';
+import { exportSession, newSessionAction, openPage, send, setDockTab, setMode, toggleDock, toggleGallery, togglePalette, toggleRail, updateSettings, DOCK_TABS, setActive, newTerminal, openBesideChat, openCheat, openPublish, pinArtifact } from '../state/store';
 import { useStore } from '../state/useStore';
 import { ACCENTS } from '../state/platform';
 
@@ -30,6 +30,7 @@ export function Palette() {
       ...DOCK_TABS.map((t) => ({ id: 'tab-' + t.id, t: 'Open · ' + t.label, k: sc('Ctrl+' + t.key), icon: t.id === 'preview' ? AppWindow : t.id === 'agents' ? GitBranch : t.id === 'stats' ? Cpu : t.id === 'run' ? Zap : Sparkles, run: () => setDockTab(t.id) })),
       { id: 'settings', t: 'Open Settings', k: '', icon: Settings, run: () => openPage('settings') },
       { id: 'tour', t: 'Replay the guided tour', k: '', icon: Sparkles, run: () => startTour() },
+      { id: 'cheat', t: 'Keyboard cheat sheet', k: '?', icon: Keyboard, run: () => openCheat() },
       ...ACCENTS.map((a) => ({ id: 'accent-' + a.id, t: 'Accent · ' + a.name, k: '', icon: Sparkles, run: () => updateSettings({ accent: a.id }) })),
       ...(['comfortable', 'compact', 'terminal'] as const).map((d) => ({ id: 'density-' + d, t: 'Density · ' + d, k: '', icon: Sparkles, run: () => updateSettings({ density: d }) })),
       { id: 'plugins', t: 'Open Plugins & Skills', k: '', icon: Puzzle, run: () => openPage('plugins') },
@@ -37,6 +38,15 @@ export function Palette() {
     ];
     if (session) {
       base.push({ id: 'export', t: 'Export session · JSONL ledger', k: '', icon: Sparkles, run: () => exportSession(session.id, 'jsonl') });
+      const latest = [...session.artifacts].reverse();
+      const latestVisual = latest.find((a) => a.html || a.kind === 'chart' || a.notebook);
+      const latestHtml = latest.find((a) => a.html);
+      const latestAny = latest[0];
+      base.push({ id: 'terminal', t: 'New terminal', k: sc('Ctrl+Alt+T'), icon: Zap, run: () => { newTerminal(session.id); setDockTab('run'); } });
+      if (latestAny) base.push({ id: 'pin-latest', t: 'Pin · ' + latestAny.title + ' → Gallery', k: '', icon: Sparkles, run: () => pinArtifact(session.id, latestAny.id) });
+      if (latestVisual) base.push({ id: 'beside-latest', t: 'Beside chat · ' + latestVisual.title, k: '', icon: Sparkles, run: () => openBesideChat(session.id, latestVisual.id) });
+      if (latestHtml) base.push({ id: 'publish-latest', t: 'Publish · ' + latestHtml.title, k: '', icon: Sparkles, run: () => openPublish(session.id, latestHtml.id) });
+      if (new URLSearchParams(location.search).has('debug')) base.push({ id: 'crash-thread', t: 'Debug · crash the conversation pane (tests the error boundary)', k: '', icon: Sparkles, run: () => { (window as unknown as { __mesaCrashThread?: boolean }).__mesaCrashThread = true; updateSettings({}); } });
       base.push({ id: 'plan', t: 'Mode · Plan', k: sc('Ctrl+.'), icon: Keyboard, run: () => setMode(session.id, 'plan') });
       base.push({ id: 'build', t: 'Mode · Build', k: '', icon: Keyboard, run: () => setMode(session.id, 'build') });
       base.push({ id: 'auto', t: 'Mode · Auto', k: '', icon: Keyboard, run: () => setMode(session.id, 'auto') });

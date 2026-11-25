@@ -825,3 +825,10 @@ body.show-keys .pill[data-key]::after { top: -8px; right: -10px; }
 .spin { animation: spin 1s linear infinite; }
 .tm-rate { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; font-size: 9.5px; font-weight: 700; color: var(--mesa-accent); font-variant-numeric: tabular-nums; white-space: nowrap; animation: fadeIn var(--mesa-m-base) var(--mesa-e-out); }
 .tokenmeter { position: relative; }
+
+/* ---------- error boundary recovery card ---------- */
+.crash-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; margin: auto; max-width: 420px; text-align: center; font-size: 13px; }
+.crash-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--mesa-danger-soft); color: var(--mesa-danger); margin-bottom: 4px; }
+.crash-details { font-family: var(--mesa-type-mono); font-size: 11px; color: var(--mesa-danger); background: var(--mesa-bg-sunken); border-radius: var(--mesa-r-md); padding: 8px 10px; max-width: 100%; overflow: auto; white-space: pre-wrap; }
+.crash-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+.btn.danger { color: var(--mesa-danger); }

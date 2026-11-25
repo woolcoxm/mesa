@@ -13,6 +13,7 @@ const ICONS: Record<string, typeof FileText> = { read: FileText, edit: Pencil, w
 const STATUS_ICON: Record<ToolCall['status'], typeof Check> = { queued: Clock, running: Loader2, 'awaiting-approval': Clock, success: Check, error: X, denied: X };
 
 export function Thread({ session }: { session: Session }) {
+  if ((window as unknown as { __mesaCrashThread?: boolean }).__mesaCrashThread) throw new Error('Debug crash requested from the palette');
   const ref = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   const [showJump, setShowJump] = useState(false);

@@ -15,9 +15,10 @@ import { CanvasPane } from './components/CanvasPane';
 import { PublishDialog } from './components/PublishDialog';
 import { KeyHints } from './components/KeyHints';
 import { CheatSheet } from './components/CheatSheet';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useNarrow, useStore } from './state/useStore';
 import { applyAccent, sc } from './state/platform';
-import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette } from './state/store';
+import { dismissShowcase, setDockFloating, setDockWidth, toggleGallery, togglePalette, DOCK_TABS } from './state/store';
 import { Sparkles } from 'lucide-react';
 
 export function App() {
@@ -40,16 +41,16 @@ export function App() {
   const glow = !!st.showcase?.minimized;
   return (
     <div className={'app' + (st.dock.open ? '' : ' no-dock') + (st.dock.floating ? ' dock-float' : '')} style={{ ['--dock-w' as string]: !st.dock.open ? '0px' : narrow ? 'clamp(300px, 40vw, 520px)' : `${st.settings.dockWidth}%`, ['--sidebar-w' as string]: `${railCollapsed || !st.rail.open ? 56 : st.settings.sidebarWidth}px` }}>
-      <Rail forceCollapsed={railCollapsed} />
+      <ErrorBoundary label="Session rail"><Rail forceCollapsed={railCollapsed} /></ErrorBoundary>
       <main className={'center' + (canvas ? ' has-canvas' : '')} key={st.page === 'session' ? session?.id ?? 'none' : st.page}>
         {st.page === 'settings' ? <SettingsPage /> : st.page === 'plugins' ? <PluginsPage /> : st.page === 'automations' ? <AutomationsPage /> : session && (
           <div className="center-split">
             <div className="center-main">
-              <Header session={session} />
-              <Thread session={session} />
-              <Composer session={session} />
+              <ErrorBoundary label="Header" resetKey={session.id}><Header session={session} /></ErrorBoundary>
+              <ErrorBoundary label="Conversation" resetKey={session.id}><Thread session={session} /></ErrorBoundary>
+              <ErrorBoundary label="Composer" resetKey={session.id}><Composer session={session} /></ErrorBoundary>
             </div>
-            {canvas && st.canvasSplit && <CanvasPane session={session} artifact={canvas} width={st.canvasSplit} />}
+            {canvas && st.canvasSplit && <ErrorBoundary label="Canvas pane" resetKey={canvas.id}><CanvasPane session={session} artifact={canvas} width={st.canvasSplit} /></ErrorBoundary>}
           </div>
         )}
         {!session && <div className="empty-thread">No session</div>}
@@ -57,7 +58,7 @@ export function App() {
       {st.dock.open && (
         <aside className="dock" aria-label="Right dock">
           <div className="dock-head"><DockTabs /><div className="dock-tools"><span className="muted" style={{ fontSize: 11 }}>{jobs ? `⚡ ${jobs}` : ''}</span><button className="icon-btn sm" data-key={sc('Shift+F')} title="Float / unfloat (Ctrl+Shift+F)" onClick={() => setDockFloating(!st.dock.floating)}>⧉</button>{glow && <span className="hdr-glow" />}</div></div>
-          <div className="dock-body">{session && (st.dock.tab === 'artifacts' ? <ArtifactsTab session={session} /> : st.dock.tab === 'run' ? <RunConsole session={session} /> : st.dock.tab === 'preview' ? <PreviewTab key={session.id} session={session} /> : st.dock.tab === 'files' ? <FilesTab session={session} /> : st.dock.tab === 'agents' ? <AgentsTab session={session} /> : st.dock.tab === 'stats' ? <StatsTab session={session} /> : st.dock.tab === 'timeline' ? <TimelineTab session={session} /> : <BrowserTab session={session} />)}</div>
+          <div className="dock-body"><ErrorBoundary label={DOCK_TABS.find((t) => t.id === st.dock.tab)?.label ?? 'Dock tab'} resetKey={st.dock.tab + (session?.id ?? '')}>{session && (st.dock.tab === 'artifacts' ? <ArtifactsTab session={session} /> : st.dock.tab === 'run' ? <RunConsole session={session} /> : st.dock.tab === 'preview' ? <PreviewTab key={session.id} session={session} /> : st.dock.tab === 'files' ? <FilesTab session={session} /> : st.dock.tab === 'agents' ? <AgentsTab session={session} /> : st.dock.tab === 'stats' ? <StatsTab session={session} /> : st.dock.tab === 'timeline' ? <TimelineTab session={session} /> : <BrowserTab session={session} />)}</ErrorBoundary></div>
           <div className="dock-resize" onPointerDown={(e) => {
             e.preventDefault();
             const el = e.currentTarget; el.setPointerCapture(e.pointerId);
@@ -70,16 +71,16 @@ export function App() {
         </aside>
       )}
       {glow && session && <div className="glow-chip"><Sparkles size={12} /> {st.sessions.find((s) => s.id === st.showcase?.sessionId)?.turns.find((t) => t.id === st.showcase?.turnId)?.deliverables.length ?? 0} deliverables docked</div>}
-      <Showcase />
+      <ErrorBoundary label="Showcase"><Showcase /></ErrorBoundary>
       <Confetti />
-      <Tour />
-      <PublishDialog />
+      <ErrorBoundary label="Tour"><Tour /></ErrorBoundary>
+      <ErrorBoundary label="PublishDialog"><PublishDialog /></ErrorBoundary>
       <KeyHints />
-      <CheatSheet />
+      <ErrorBoundary label="CheatSheet"><CheatSheet /></ErrorBoundary>
       <TrayStack />
       <Toasts />
-      <Palette />
-      <Gallery />
+      <ErrorBoundary label="Palette"><Palette /></ErrorBoundary>
+      <ErrorBoundary label="Gallery"><Gallery /></ErrorBoundary>
     </div>
   );
 }

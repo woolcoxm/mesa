@@ -175,6 +175,10 @@ The original design brief — vision, IA, showcase/run system specs, 12 interact
 
 ## Testing
 
+![A rendering bug is contained by an error boundary](docs/screenshots/29-error-boundary.png)
+
+**Robustness** — every pane and dialog sits behind an error boundary: a rendering bug shows a recovery card (Retry · Copy details · Reset workspace) while the rest of the shell keeps working, and uncaught errors or rejected promises surface as toasts instead of failing silently. The server survives a throwing request handler, and live turns have a first-byte watchdog and a cancellation path.
+
 **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests, on **Ubuntu, macOS and Windows**: install → typecheck → build → `scripts/smoke.mjs`, which boots the server with the real shell enabled and verifies the app, the shell status, a quoted command, exit-code propagation, the workspace boundary and the offline mock.
 
 **Screenshots** — `pnpm shots` (after `npx playwright install chromium` once) replays a deterministic demo in headless Chromium and rewrites every image in `docs/screenshots/`, so the README never drifts from the UI.

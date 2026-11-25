@@ -2,11 +2,15 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { seed, getState, renameSession, closeCanvas, closeCheat, closePublish, openCheat, openPage, setActive, setDockFloating, togglePalette, newSessionAction, setDockTab, setMode, setPreset, updateSettings, toggleGallery, toggleDock, toggleRail, dismissShowcase, newTerminal, DOCK_TABS } from './state/store';
 import { resolveShortcutEvent } from './state/shortcuts';
+import { subscribe, toast } from './state/store';
 import './styles/tokens.css';
 import './styles/app.css';
 
 async function boot() {
   await seed();
+  // Uncaught errors surface as toasts instead of failing silently; error boundaries keep rendering bugs inside their pane.
+  window.addEventListener('error', (e) => { if (e.message && !(e.target instanceof HTMLElement)) toast('Unhandled error: ' + e.message.slice(0, 90), 'error'); });
+  window.addEventListener('unhandledrejection', (e) => { toast('Unhandled promise: ' + String((e.reason as Error)?.message ?? e.reason).slice(0, 90), 'error'); });
   // Deep links: #/s/<session>/<tab> (or #/<page>) restore the active session and dock tab; the URL is kept in sync (no history spam).
   const applyHash = () => {
     const m = /^#\/s\/([\w-]+)(?:\/(\w+))?/.exec(location.hash);
@@ -16,11 +20,11 @@ async function boot() {
   applyHash();
   window.addEventListener('hashchange', applyHash);
   let lastUrl = '';
-  import('./state/store').then(({ subscribe }) => subscribe(() => {
+  subscribe(() => {
     const s = getState(); const session = s.sessions.find((x) => x.id === s.activeSessionId);
     const next = s.page === 'session' && session ? `#/s/${session.id}/${s.dock.tab}` : `#/${s.page}`;
     if (next !== lastUrl) { lastUrl = next; history.replaceState(null, '', next); }
-  }));
+  });
   createRoot(document.getElementById('root')!).render(<App />);
   // Live document title: "● working · <session> — Mesa" while the agent runs.
   let lastTitle = '';
