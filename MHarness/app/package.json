@@ -1,7 +1,7 @@
 {
   "name": "mesa",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mesa — a visual harness for LLM agents",
   "license": "MIT",
   "type": "module",

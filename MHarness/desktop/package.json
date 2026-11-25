@@ -1,6 +1,6 @@
 {
   "name": "mesa-desktop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Mesa desktop shell: Electron window around the Mesa server (real shell, notebook execution, ACP bridge) and the built app.",
   "main": "main.cjs",

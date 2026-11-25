@@ -4,6 +4,8 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-11-24
+
 ### Added
 - **Undo** for deleted sessions (7-second toast action).
 - **Drag and drop** files onto the composer to attach them; dropped HTML/SVG files open directly in the preview.
