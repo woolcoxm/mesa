@@ -177,6 +177,7 @@ export interface Settings {
   automations: Automation[];
   skills: Skill[];
   plugins: Record<string, boolean>;
+  alwaysAllow: Record<string, boolean>;
   provider?: { baseUrl: string; apiKey: string; model: string; preset: string; proxy: boolean; tools?: boolean };
 }
 

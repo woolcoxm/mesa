@@ -64,7 +64,7 @@ const initial: AppState = {
   page: 'session',
   toasts: [],
   tray: [],
-  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [], skills: [], plugins: {} },
+  settings: { theme: 'dark', density: 'comfortable', dnd: false, effects: true, notifications: true, autoComplete: false, sidebarWidth: 260, dockWidth: 44, agent: 'demo', shell: false, accent: 'indigo', tourDone: false, shortcuts: {}, automations: [], skills: [], plugins: {}, alwaysAllow: {} },
   canvasSplit: null,
   canvasArtifact: null,
   insert: null,
@@ -381,10 +381,12 @@ export async function runAcpTurn(sessionId: Id, turnId: Id) {
     addTool: (call) => updateTurn(sessionId, turnId, (t) => { t.blocks.push({ id: uid(), type: 'tool', call }); }),
     updateTool: (callId, patch) => updateTurn(sessionId, turnId, (t) => { t.blocks = t.blocks.map((b) => (b.type === 'tool' && b.call.id === callId ? { ...b, call: { ...b.call, ...patch } } : b)); }),
     requestPermission: async ({ callId, title, command, options }) => {
+      const option = (re: RegExp) => options.find((o) => re.test(o.kind))?.optionId;
+      const allowOption = option(/allow_once/) ?? option(/allow/) ?? options[0]?.optionId ?? 'allow';
+      if (!!state.settings.alwaysAllow?.acp) return { optionId: allowOption }; // "always for this repo"
       // Locate the tool row for this call (created by the preceding tool event) or add one.
       let blockIdForCall: Id | undefined;
       updateTurn(sessionId, turnId, (t) => { const b = t.blocks.find((x) => x.type === 'tool' && x.call.id === callId); if (b) blockIdForCall = b.id; else { const nb = uid(); t.blocks.push({ id: nb, type: 'tool', call: { id: callId, name: 'tool', title, subtitle: 'acp', status: 'running', startedAt: Date.now(), runtime: 'host' } }); blockIdForCall = nb; } });
-      const option = (re: RegExp) => options.find((o) => re.test(o.kind))?.optionId;
       const decision = await requestApproval(sessionId, turnId, blockIdForCall!, callId, { kind: 'shell', title: title || 'Agent permission request', detail: command || title, flags: [], risk: { level: 'medium', rationale: 'Requested by the ACP agent.' } }, false);
       updateCall(sessionId, turnId, blockIdForCall!, (c) => { c.decision = decision; });
       if (decision.action === 'deny') return { optionId: option(/reject/) ?? options[0]?.optionId ?? 'reject' };
@@ -468,7 +470,16 @@ export function decide(sessionId: Id, decision: Decision) {
   approvalResolvers.delete(ap.id);
   updateSession(sessionId, (ss) => { ss.pendingApproval = undefined; ss.state = ss.turns.some((t) => t.status === 'running') ? 'running' : 'idle'; if (decision.action === 'allow-session') ss.allowSessionShell = true; });
   pushTimeline(sessionId, { label: `approval ${decision.action}`, kind: 'approval' });
+  if (decision.action === 'allow-always') {
+    // Remember per tool for this workspace ("always for this repo"); dangerous patterns still prompt.
+    const call = s.turns.flatMap((t) => t.blocks).find((b) => b.type === 'tool' && b.call.id === ap.callId);
+    const key = call && call.type === 'tool' ? (call.call.name === 'tool' ? 'acp' : call.call.name) : 'tool';
+    updateSettings({ alwaysAllow: { ...state.settings.alwaysAllow, [key]: true } });
+    toast(`${key === 'bash' ? 'Shell commands' : key === 'acp' ? 'ACP agent requests' : key} won't ask again in this workspace (dangerous patterns still prompt)`, 'info');
+  }
 }
+export function revokeAlwaysAllow(key: string) { const next = { ...state.settings.alwaysAllow }; delete next[key]; updateSettings({ alwaysAllow: next }); toast('Rule revoked', 'info'); }
+export function isAlwaysAllowed(key: string) { return !!state.settings.alwaysAllow?.[key]; }
 
 // ---------- agent runner ----------
 function makeArtifact(seed: ArtifactSeed, sessionId: Id, turnId: Id): Artifact {
@@ -822,9 +833,10 @@ export async function runModelTurn(sessionId: Id, turnId: Id) {
         const preset = state.sessions.find((x) => x.id === sessionId)?.preset ?? 'workspace-write';
         let allowed = true;
         const cur = state.sessions.find((x) => x.id === sessionId);
-        if (preset !== 'full-access' && !cur?.allowSessionShell) {
-          const cmd = String(args.command ?? '');
-          const flags = ['rm -rf', 'sudo', '| sh', '| bash', 'curl ', 'git push', 'drop'].filter((f) => cmd.includes(f));
+        const cmd = String(args.command ?? '');
+        const flags = ['rm -rf', 'sudo', '| sh', '| bash', 'curl ', 'git push', 'drop'].filter((f) => cmd.includes(f));
+        const alwaysOk = !!state.settings.alwaysAllow?.bash && flags.length === 0; // "always for this repo", but dangerous patterns still prompt
+        if (preset !== 'full-access' && !cur?.allowSessionShell && !alwaysOk) {
           const d = await requestApproval(sessionId, turnId, tb, tcId, { kind: 'shell', title: 'Run shell command', detail: cmd, flags, risk: { level: flags.length ? 'high' : 'medium', rationale: flags.length ? `Matches dangerous pattern(s): ${flags.join(', ')}` : state.settings.shell ? 'Requested by the live model — runs for real on this machine (inside the repository folder).' : 'Requested by the live model; runs in the demo sandbox.' } }, false);
           if (d.action === 'deny') { allowed = false; output = `Denied by user${d.reason ? `: ${d.reason}` : ''}`; }
         }

@@ -9,6 +9,9 @@ All notable changes to Mesa are documented here. The format follows [Keep a Chan
 - Long sessions render their last 30 turns first with a "Show earlier turns" button (keeps the thread fast at any length).
 - Pressing **N** reuses an untouched "New session" instead of piling up empty duplicates.
 
+### Fixed
+- **"Always allow for this repo" now sticks**: the approval scope is remembered per tool for the workspace (dangerous shell patterns still prompt; ACP permission requests can be remembered too), and Settings → Permissions lists the rules with a revoke button — previously the choice only allowed the one command.
+
 ## [0.3.0] — 2026-11-24
 
 ### Added

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Check, Info, AlertTriangle, OctagonAlert, Sun, Moon, Monitor, Sparkles, Puzzle, CalendarClock, Power, Keyboard, SlidersHorizontal } from 'lucide-react';
-import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings } from '../state/store';
+import { dismissToast, exportSession, requestNotifyPermission, resetWorkspace, toast, toggleGallery, toggleRail, updateSettings, revokeAlwaysAllow } from '../state/store';
 import { startTour } from './Tour';
 import { ShortcutEditor } from './ShortcutEditor';
 import { acpStatus } from '../agent/acp';
@@ -61,9 +61,20 @@ export function SettingsPage() {
       </section>
       <section className="set-section"><h4>Permissions</h4>
         <ShellRow />
-        <Row label="Scope memory" sub="“Always allow for this repo” rules"><span className="muted">3 rules · manage</span></Row>
+        <ScopeMemoryRow />
         <Row label="Auto-review tool calls" sub="A second model labels risk before an approval is shown"><Toggle on={true} onChange={() => {}} /></Row>
       </section>
+    </div>
+  );
+}
+
+function ScopeMemoryRow() {
+  const st = useStore();
+  const LABEL: Record<string, string> = { bash: 'Shell commands without dangerous patterns', acp: 'ACP agent permission requests' };
+  const rules = Object.entries(st.settings.alwaysAllow ?? {}).filter(([, v]) => v);
+  return (
+    <div className="set-row"><div><b>Scope memory</b><div className="set-sub">“Always allow for this repo” rules — dangerous shell patterns still prompt</div></div>
+      {rules.length === 0 ? <span className="muted">no rules yet</span> : <div className="scope-rules">{rules.map(([k]) => <span key={k} className="scope-rule"><span>{LABEL[k] ?? k}</span><button className="icon-btn sm" title="Revoke" aria-label={`Revoke ${LABEL[k] ?? k}`} onClick={() => revokeAlwaysAllow(k)}><X size={12} /></button></span>)}</div>}
     </div>
   );
 }
